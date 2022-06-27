@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   backend:
-    image: industryessentials/ymir-backend
+    image: industryessentials/ymir-backend:test
     env_file:
       - .env
     runtime: ${SERVER_RUNTIME}
@@ -55,7 +55,7 @@ services:
     command: bash -c 'cd /app && supervisord -nc supervisor/supervisord.conf'
     restart: on-failure:10
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
   redis:
     image: industryessentials/ymir-backend-redis
@@ -65,16 +65,16 @@ services:
       - ${YMIR_PATH}/redis:/data
     restart: on-failure:10
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
   viz-redis:
     image: industryessentials/ymir-viz-redis
     restart: on-failure:10
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
   web:
-    image: industryessentials/ymir-web
+    image: industryessentials/ymir-web:test
     volumes:
       - "${YMIR_PATH}/ymir-models:/data/ymir/ymir-models"
       - "${YMIR_PATH}/ymir-assets:/data/ymir/ymir-assets"
@@ -88,7 +88,7 @@ services:
     depends_on:
       - backend
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
   db:
     image: 'mysql/mysql-server:8.0.25'
@@ -101,7 +101,7 @@ services:
       - ${YMIR_PATH}/mysql:/var/lib/mysql
     restart: on-failure:10
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
   tensorboard:
     image: tensorflow/tensorflow:latest
@@ -112,7 +112,7 @@ services:
     command: tensorboard --logdir ${TENSORBOARD_ROOT} --port 6006 --bind_all
     restart: on-failure:10
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
   clickhouse:
     image: clickhouse/clickhouse-server
@@ -124,13 +124,13 @@ services:
       - ${YMIR_PATH}/clickhouseDB:/var/lib/clickhouse
     restart: on-failure:10
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
 networks:
-  ymirnetwork:
+  ymirnetwork_test:
     driver: bridge
     ipam:
       driver: default
       config:
-      - subnet: 172.168.254.0/24
-        gateway: 172.168.254.1
+      - subnet: 172.198.254.0/24
+        gateway: 172.198.254.1
