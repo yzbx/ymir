@@ -17,6 +17,12 @@ const PrCurve = ({ title='', lines }) => {
   }
 
   const legend = { }
+  const grid = {
+    left: '0',
+    right: '5px',
+    bottom: '3%',
+    // containLabel: true
+  }
   const yAxis = [
     {
       type: 'value'
@@ -76,7 +82,7 @@ const PrCurve = ({ title='', lines }) => {
     <Card bordered={false} title={title}>
       {series.length ? (
         <>
-          <LineChart option={option} style={{ width: '100%' }}></LineChart>
+          <LineChart option={option} style={{ height: '300px', width: '100%' }}></LineChart>
         </>) : <Empty />}
     </Card>
   )
