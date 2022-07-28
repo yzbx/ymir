@@ -130,7 +130,7 @@ def command_run_in_out(f: Callable) -> Callable:
 
             logging.info(f"command done: {dst_rev}, return code: {ret}")
 
-            _cleanup(work_dir=work_dir)
+            #_cleanup(work_dir=work_dir)
 
             return ret
 
@@ -152,7 +152,7 @@ def command_run_in_out(f: Callable) -> Callable:
         logging.info(f"command failed: {dst_rev}; exc: {exc}")
         logging.info(f"trace: {trace_message}")
 
-        _cleanup(work_dir=work_dir)
+        #_cleanup(work_dir=work_dir)
 
         raise exc
 
