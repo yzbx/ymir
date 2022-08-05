@@ -111,13 +111,6 @@ def _generate_config(executor_config: Any, out_config_path: str, task_id: str,
 
     return executor_config
 
-
-def _get_shm_size(executor_config: dict) -> str:
-    if 'shm_size' not in executor_config:
-        return '16G'
-    return executor_config['shm_size']
-
-
 def _prepare_pretrained_models(model_location: str, model_hash: str, dst_model_dir: str) -> List[str]:
     """
     prepare pretrained models
@@ -342,7 +335,10 @@ class CmdTrain(base.BaseCommand):
         path_binds.append(f"-v{work_dir_out}:/out")
         path_binds.append(f"-v{tensorboard_dir}:/out/tensorboard")
 
-        cmd = ['nvidia-docker', 'run', '--rm', f"--shm-size={_get_shm_size(executor_config=executor_config)}"]
+        cmd = ['nvidia-docker', 'run', '--rm', f"--shm-size={executor_config.get('shm_size', '16G')}"]
+        docker_args = executor_config.get('docker_args', '')
+        if docker_args:
+            cmd.append(docker_args)
         cmd.extend(path_binds)
         if available_gpu_id:
             cmd.extend(['--gpus', f"\"device={available_gpu_id}\""])

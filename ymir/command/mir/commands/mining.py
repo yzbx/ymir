@@ -151,6 +151,8 @@ class CmdMining(base.BaseCommand):
         return_code = MirCode.RC_OK
         return_msg = ''
         try:
+            with open(config_file, 'r') as f:
+                mining_config = yaml.safe_load(f.read())
             infer.CmdInfer.run_with_args(work_dir=work_dir,
                                          mir_root=mir_root,
                                          media_path=work_asset_path,
@@ -159,7 +161,8 @@ class CmdMining(base.BaseCommand):
                                          index_file=work_index_file,
                                          config_file=config_file,
                                          task_id=dst_typ_rev_tid.tid,
-                                         shm_size=_get_shm_size(config_file),
+                                         shm_size=mining_config.get(key='shm_size', default='16G'),
+                                         docker_args=mining_config.get(key='docker_args', default=''),
                                          executor=executor,
                                          executant_name=executant_name,
                                          run_infer=add_annotations,
@@ -339,14 +342,6 @@ def _prepare_assets(mir_metadatas: mirpb.MirMetadatas, mir_root: str, src_rev_ti
                          format_type=data_exporter.ExportFormat.EXPORT_FORMAT_NO_ANNOTATION,
                          index_file_path=work_index_file,
                          index_assets_prefix=work_asset_path)
-
-
-def _get_shm_size(mining_config_file_path: str) -> str:
-    with open(mining_config_file_path, 'r') as f:
-        mining_config = yaml.safe_load(f.read())
-    if 'shm_size' not in mining_config:
-        return '16G'
-    return mining_config['shm_size']
 
 
 # public: arg parser

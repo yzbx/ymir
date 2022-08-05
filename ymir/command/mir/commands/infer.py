@@ -59,6 +59,7 @@ class CmdInfer(base.BaseCommand):
                       executant_name: str,
                       task_id: str = f"default-infer-{time.time()}",
                       shm_size: str = None,
+                      docker_args: str = None,
                       run_infer: bool = False,
                       run_mining: bool = False) -> int:
         """run infer command
@@ -164,6 +165,7 @@ class CmdInfer(base.BaseCommand):
                        executor=executor,
                        executant_name=executant_name,
                        shm_size=shm_size,
+                       docker_args=docker_args,
                        task_type=task_id,
                        gpu_id=available_gpu_id)
 
@@ -296,7 +298,7 @@ def prepare_config_file(config: dict, dst_config_file: str, **kwargs: Any) -> No
 
 def run_docker_cmd(asset_path: str, index_file_path: str, model_path: str, config_file_path: str, env_file_path: str,
                    out_path: str, executor: str, executant_name: str, shm_size: Optional[str], task_type: str,
-                   gpu_id: str) -> int:
+                   gpu_id: str, docker_args: Optional[str]) -> int:
     """ runs infer or mining docker container """
     cmd = ['nvidia-docker', 'run', '--rm']
     # path bindings
@@ -312,6 +314,8 @@ def run_docker_cmd(asset_path: str, index_file_path: str, model_path: str, confi
         cmd.extend(['--gpus', f"\"device={gpu_id}\""])
     if shm_size:
         cmd.append(f"--shm-size={shm_size}")
+    if docker_args:
+        cmd.append(docker_args)
     cmd.extend(['--name', executant_name])
     cmd.append(executor)
 
