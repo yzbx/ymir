@@ -4,7 +4,7 @@ import { useHistory, useLocation, withRouter, useSelector } from "umi"
 import t from '@/utils/t'
 import { isSuperAdmin } from '@/constants/user'
 import { BarchartIcon, FlagIcon, GithubIcon, FileHistoryIcon, MymodelIcon, 
-  NavDatasetIcon, UserIcon, UserSettingsIcon, Diagnosis, EditIcon, EyeOffIcon, TrainIcon } from '@/components/common/icons'
+  NavDatasetIcon, UserIcon, UserSettingsIcon, DiagnosisIcon, EditIcon, EyeOffIcon, TrainIcon } from '@/components/common/icons'
 import { ProjectIcon, VectorIcon } from "./icons"
 
 const { Sider } = Layout
@@ -44,12 +44,12 @@ function LeftMenu() {
         getItem(t('projects.title'), `/home/project`, ProjectIcon, ),
         showLeftMenu ? getItem(project.name, `project.summary`, VectorIcon, [
             getItem(t('project.summary'), `/home/project/${id}/detail`, BarchartIcon,),
-            getItem(t('project.settings.title'), `/home/project/${id}/add`, EditIcon,),
             getItem(t('dataset.list'), `/home/project/${id}/dataset`, NavDatasetIcon,),
             getItem(t('model.management'), `/home/project/${id}/model`, MymodelIcon,),
-            getItem(t('model.diagnose'), `/home/project/${id}/diagnose`, Diagnosis),
+            getItem(t('model.diagnose'), `/home/project/${id}/diagnose`, DiagnosisIcon),
             getItem(t('breadcrumbs.task.training'), `/home/project/${id}/train`, TrainIcon),
             getItem(t('common.hidden.list'), `/home/project/${id}/hidden`, EyeOffIcon,),
+            getItem(t('project.settings.title'), `/home/project/${id}/add`, EditIcon,),
         ]) : null,
       ]),
       getGroupItem(t('breadcrumbs.keyword'), 'keyword', [

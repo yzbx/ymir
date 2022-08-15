@@ -175,7 +175,8 @@ body {
       opacity: 0;
     }
   }
-  .normalFont .ant-form-item-label {
+  .ant-form-vertical .ant-form-item-label > label::before {
+    content: '';
     font-weight: normal;
   }
   .ant-radio-button-wrapper,.ant-form-item-control-input-content {
@@ -215,7 +216,7 @@ body {
   height: 50px;
   line-height: 50px;
   // background: @white;
-  margin: 0 -20px 20px;
+  margin: 0 -20px 0;
   padding: 0 20px;
   // .box-shadow();
   .breadcrumbContent {
