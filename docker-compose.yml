@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   backend:
-    image: industryessentials/ymir-backend:test
+    image: industryessentials/ymir-backend:1.2.2
     env_file:
       - .env
     runtime: ${SERVER_RUNTIME}
@@ -98,7 +98,7 @@ services:
       - ymirnetwork_test
 
   web:
-    image: industryessentials/ymir-web:test
+    image: industryessentials/ymir-web:1.2.2
     volumes:
       - "${YMIR_PATH}/ymir-models:/data/ymir/ymir-models"
       - "${YMIR_PATH}/ymir-assets:/data/ymir/ymir-assets"
@@ -184,7 +184,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - ymirnetwork
+      - ymirnetwork_test
 
 networks:
   ymirnetwork_test:
