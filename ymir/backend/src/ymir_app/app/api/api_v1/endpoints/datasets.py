@@ -1,7 +1,7 @@
 from operator import attrgetter
 import enum
 import random
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
 from fastapi.logger import logger
@@ -12,15 +12,15 @@ from app.api import deps
 from app.api.errors.errors import (
     AssetNotFound,
     ControllerError,
+    DatasetGroupNotFound,
     DatasetNotFound,
     DuplicateDatasetGroupError,
     NoDatasetPermission,
     FailedToHideProtectedResources,
-    DatasetGroupNotFound,
     ProjectNotFound,
-    RequiredFieldMissing,
     MissingOperations,
     RefuseToProcessMixedOperations,
+    RequiredFieldMissing,
 )
 from app.config import settings
 from app.constants.state import TaskState, TaskType, ResultState
@@ -34,46 +34,27 @@ from common_utils.labels import UserLabels
 router = APIRouter()
 
 
-@router.get("/batch", response_model=schemas.DatasetsOut)
+@router.get("/batch", response_model=schemas.DatasetsAnalysesOut)
 def batch_get_datasets(
-    db: Session = Depends(deps.get_db),
-    dataset_ids: str = Query(None, example="1,2,3", alias="ids"),
-) -> Any:
-    ids = [int(i) for i in dataset_ids.split(",")]
-    datasets = crud.dataset.get_multi_by_ids(db, ids=ids)
-    if not datasets:
-        raise DatasetNotFound()
-    return {"result": datasets}
-
-
-@router.get("/analysis", response_model=schemas.DatasetsAnalysesOut)
-def get_datasets_analysis(
     db: Session = Depends(deps.get_db),
     viz_client: VizClient = Depends(deps.get_viz_client),
     project_id: int = Query(None),
     dataset_ids: str = Query(None, example="1,2,3", alias="ids"),
+    verbose_info: bool = Query(False, alias="verbose"),
     current_user: models.User = Depends(deps.get_current_active_user),
     user_labels: UserLabels = Depends(deps.get_user_labels),
 ) -> Any:
     ids = [int(i) for i in dataset_ids.split(",")]
-    datasets = crud.dataset.get_multi_by_ids(db, ids=ids)
-    if not datasets:
-        raise DatasetNotFound()
+    datasets = ensure_datasets_are_ready(db, dataset_ids=ids)
 
-    viz_client.initialize(
-        user_id=current_user.id,
-        project_id=project_id,
-        user_labels=user_labels,
-    )
-    results = []
-    for dataset in datasets:
-        if dataset.result_state != int(ResultState.ready):
-            raise DatasetNotFound()
-        res = viz_client.get_dataset(dataset.hash)
-        res.group_name = dataset.group_name  # type: ignore
-        res.version_num = dataset.version_num  # type: ignore
-        results.append(res)
-    return {"result": {"datasets": results}}
+    datasets_info = [schemas.dataset.DatasetInDB.from_orm(dataset).dict() for dataset in datasets]
+
+    if verbose_info:
+        viz_client.initialize(user_id=current_user.id, project_id=project_id, user_labels=user_labels)
+        for dataset in datasets_info:
+            dataset_analysis = viz_client.get_dataset_analysis(dataset["hash"], require_hist=True)
+            dataset.update(dataset_analysis)
+    return {"result": datasets_info}
 
 
 @router.post("/batch", response_model=schemas.DatasetsOut)
@@ -282,13 +263,17 @@ def delete_dataset(
 
 @router.get(
     "/{dataset_id}",
-    response_model=schemas.DatasetOut,
+    response_model=schemas.DatasetInfoOut,
     responses={404: {"description": "Dataset Not Found"}},
 )
 def get_dataset(
     db: Session = Depends(deps.get_db),
     dataset_id: int = Path(..., example="12"),
+    keywords_for_negative_info: str = Query(None, alias="keywords"),
+    verbose_info: bool = Query(False, alias="verbose"),
     current_user: models.User = Depends(deps.get_current_active_user),
+    viz_client: VizClient = Depends(deps.get_viz_client),
+    user_labels: UserLabels = Depends(deps.get_user_labels),
 ) -> Any:
     """
     Get verbose information of specific dataset
@@ -296,36 +281,30 @@ def get_dataset(
     dataset = crud.dataset.get_by_user_and_id(db, user_id=current_user.id, id=dataset_id)
     if not dataset:
         raise DatasetNotFound()
-    return {"result": dataset}
 
+    keyword_ids: Optional[List[int]] = None
+    if keywords_for_negative_info:
+        keywords = keywords_for_negative_info.split(",")
+        keyword_ids = user_labels.get_class_ids(keywords)
 
-@router.get("/{dataset_id}/stats", response_model=schemas.dataset.DatasetStatsOut)
-def get_dataset_stats(
-    db: Session = Depends(deps.get_db),
-    dataset_id: int = Path(..., example="12"),
-    project_id: int = Query(None),
-    keywords_str: str = Query(None, alias="keywords"),
-    viz_client: VizClient = Depends(deps.get_viz_client),
-    current_user: models.User = Depends(deps.get_current_active_user),
-    user_labels: UserLabels = Depends(deps.get_user_labels),
-) -> Any:
-    dataset = crud.dataset.get_by_user_and_id(db, user_id=current_user.id, id=dataset_id)
-    if not dataset:
-        raise DatasetNotFound()
+    dataset_info = schemas.dataset.DatasetInDB.from_orm(dataset).dict()
+    if verbose_info or keyword_ids:
+        viz_client.initialize(
+            user_id=current_user.id,
+            project_id=dataset.project_id,
+            user_labels=user_labels,
+        )
+        if verbose_info:
+            # get cks and tags
+            dataset_stats = viz_client.get_dataset_info(dataset_hash=dataset.hash)
+        else:
+            # get negative info based on given keywords
+            dataset_stats = viz_client.get_dataset_analysis(
+                dataset_hash=dataset.hash, keyword_ids=keyword_ids, require_hist=False
+            )
+        dataset_info.update(dataset_stats)
 
-    keywords = keywords_str.split(",")
-    if not keywords:
-        raise RequiredFieldMissing()
-
-    keyword_ids = user_labels.get_class_ids(keywords)
-    viz_client.initialize(
-        user_id=current_user.id,
-        project_id=project_id,
-        branch_id=dataset.hash,
-        user_labels=user_labels,
-    )
-    dataset_stats = viz_client.get_dataset_stats(keyword_ids=keyword_ids)
-    return {"result": dataset_stats}
+    return {"result": dataset_info}
 
 
 @router.get(
@@ -339,6 +318,11 @@ def get_assets_of_dataset(
     offset: int = 0,
     limit: int = settings.DEFAULT_LIMIT,
     keyword: Optional[str] = Query(None),
+    keywords_str: Optional[str] = Query(None, example="person,cat", alias="keywords"),
+    cm_types_str: Optional[str] = Query(None, example="tp,mtp", alias="cm_types"),
+    cks_str: Optional[str] = Query(None, example="shenzhen,shanghai", alias="cks"),
+    tags_str: Optional[str] = Query(None, example="big,small", alias="tags"),
+    annotation_types_str: Optional[str] = Query(None, example="gt,pred", alias="annotation_types"),
     viz_client: VizClient = Depends(deps.get_viz_client),
     current_user: models.User = Depends(deps.get_current_active_user),
     user_labels: UserLabels = Depends(deps.get_user_labels),
@@ -351,23 +335,32 @@ def get_assets_of_dataset(
     if not dataset:
         raise DatasetNotFound()
 
-    keyword_id = user_labels.get_class_ids(keyword)[0] if keyword else None
+    if keyword:
+        # fixme
+        #  remove upon replacing all viz endpoints
+        keywords = [keyword]  # type: Optional[List]
+    elif keywords_str:
+        keywords = keywords_str.split(",")
+    else:
+        keywords = None
+    keyword_ids = user_labels.get_class_ids(keywords) if keywords else None
+
     viz_client.initialize(
         user_id=current_user.id,
         project_id=dataset.project_id,
-        branch_id=dataset.hash,
         user_labels=user_labels,
     )
     assets = viz_client.get_assets(
-        keyword_id=keyword_id,
+        dataset_hash=dataset.hash,
+        keyword_ids=keyword_ids,
+        cm_types=stringtolist(cm_types_str),
+        cks=stringtolist(cks_str),
+        tags=stringtolist(tags_str),
+        annotation_types=stringtolist(annotation_types_str),
         limit=limit,
         offset=offset,
     )
-    result = {
-        "items": assets.items,
-        "total": assets.total,
-    }
-    return {"result": result}
+    return {"result": assets}
 
 
 @router.get(
@@ -393,17 +386,17 @@ def get_random_asset_id_of_dataset(
     viz_client.initialize(
         user_id=current_user.id,
         project_id=dataset.project_id,
-        branch_id=dataset.hash,
         user_labels=user_labels,
     )
     assets = viz_client.get_assets(
+        dataset_hash=dataset.hash,
         keyword_id=None,
         offset=offset,
         limit=1,
     )
-    if len(assets.items) == 0:
+    if assets["total"] == 0:
         raise AssetNotFound()
-    return {"result": assets.items[0]}
+    return {"result": assets["items"][0]}
 
 
 def get_random_asset_offset(dataset: models.Dataset) -> int:
@@ -436,13 +429,12 @@ def get_asset_of_dataset(
     viz_client.initialize(
         user_id=current_user.id,
         project_id=dataset.project_id,
-        branch_id=dataset.hash,
         user_labels=user_labels,
     )
-    asset = viz_client.get_asset(asset_id=asset_hash)
-    if not asset:
+    assets = viz_client.get_assets(dataset_hash=dataset.hash, asset_hash=asset_hash, limit=1)
+    if assets["total"] == 0:
         raise AssetNotFound()
-    return {"result": asset}
+    return {"result": assets["items"][0]}
 
 
 def normalize_fusion_parameter(
@@ -580,19 +572,29 @@ def merge_datasets(
     Merge multiple datasets
     """
     logger.info("[merge] merge dataset with payload: %s", in_merge.json())
-    main_dataset = crud.dataset.get(db, id=in_merge.dataset_id)
-    if not main_dataset:
-        raise DatasetNotFound()
-
-    if in_merge.include_datasets:
-        in_datasets = ensure_datasets_are_ready(db, dataset_ids=[in_merge.dataset_id, *in_merge.include_datasets])
-        in_datasets.sort(
-            key=attrgetter("create_datetime"),
-            reverse=(in_merge.merge_strategy == MergeStrategy.prefer_newest),
+    if in_merge.dest_group_name:
+        if crud.dataset_group.is_duplicated_name_in_project(
+            db, project_id=in_merge.project_id, name=in_merge.dest_group_name
+        ):
+            raise DuplicateDatasetGroupError()
+        dest_group = crud.dataset_group.create_dataset_group(
+            db,
+            name=in_merge.dest_group_name,
+            user_id=current_user.id,
+            project_id=in_merge.project_id,
         )
+    elif in_merge.dest_group_id:
+        dest_group = crud.dataset_group.get(db, id=in_merge.dest_group_id)  # type: ignore
+        if not dest_group:
+            raise DatasetGroupNotFound()
     else:
-        in_datasets = [main_dataset]
+        raise RequiredFieldMissing()
 
+    in_datasets = ensure_datasets_are_ready(db, dataset_ids=in_merge.include_datasets)
+    in_datasets.sort(
+        key=attrgetter("create_datetime"),
+        reverse=(in_merge.merge_strategy == MergeStrategy.prefer_newest),
+    )
     ex_datasets = (
         ensure_datasets_are_ready(db, dataset_ids=in_merge.exclude_datasets) if in_merge.exclude_datasets else None
     )
@@ -621,9 +623,8 @@ def merge_datasets(
         parameters=in_merge.json(),
     )
     logger.info("[merge] related task record created: %s", task.hash)
-    merged_dataset = crud.dataset.create_as_task_result(
-        db, task, main_dataset.dataset_group_id, description=in_merge.description
-    )
+
+    merged_dataset = crud.dataset.create_as_task_result(db, task, dest_group.id, description=in_merge.description)
     return {"result": merged_dataset}
 
 
@@ -679,3 +680,9 @@ def filter_dataset(
         db, task, main_dataset.dataset_group_id, description=in_filter.description
     )
     return {"result": filtered_dataset}
+
+
+def stringtolist(s: Optional[str]) -> Optional[List]:
+    if s is None:
+        return s
+    return s.split(",")

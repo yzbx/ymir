@@ -5,6 +5,7 @@ import { useHistory, useParams, useLocation } from "umi"
 
 import { formLayout } from "@/config/antd"
 import t from "@/utils/t"
+import { HIDDENMODULES } from '@/constants/common'
 import { string2Array } from "@/utils/string"
 import { OPENPAI_MAX_GPU_COUNT } from '@/constants/common'
 import { TYPES } from '@/constants/image'
@@ -25,6 +26,7 @@ import Desc from "@/components/form/desc"
 import commonStyles from "../common.less"
 import styles from "./index.less"
 import OpenpaiForm from "../components/openpaiForm"
+import Tip from "@/components/form/tip"
 
 const { Option } = Select
 
@@ -65,7 +67,9 @@ function Inference({ datasetCache, datasets, ...func }) {
 
   useEffect(() => {
     setGPU(sys.gpu_count || 0)
-    setOpenpai(!!sys.openpai_enabled)
+    if (!HIDDENMODULES.OPENPAI) {
+      setOpenpai(!!sys.openpai_enabled)
+    }
   }, [sys])
 
   useEffect(() => {
@@ -128,7 +132,9 @@ function Inference({ datasetCache, datasets, ...func }) {
   function imageChange(_, image = {}) {
     const { url, configs = [] } = image
     const configObj = configs.find(conf => conf.type === TYPES.INFERENCE) || {}
-    setLiveCode(image.liveCode || false)
+    if (!HIDDENMODULES.LIVECODE) {
+      setLiveCode(image.liveCode || false)
+    }
     setConfig(removeLiveCodeConfig(configObj.config))
   }
 
@@ -223,6 +229,7 @@ function Inference({ datasetCache, datasets, ...func }) {
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
           >
+            <Form.Item wrapperCol={{ span: 20 }}><Tip content={t('task.inference.header.tip')} /></Form.Item>
             <Form.Item
               label={t('task.inference.form.dataset.label')}
               required

@@ -1,6 +1,6 @@
 import enum
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, validator, root_validator
 
@@ -37,8 +37,6 @@ class DatasetBase(BaseModel):
     # task_id haven't created yet
     # user_id can be parsed from token
     keywords: Optional[str]
-    ignored_keywords: Optional[str]
-    negative_info: Optional[str]
     asset_count: Optional[int]
     keyword_count: Optional[int]
 
@@ -86,8 +84,6 @@ class DatasetUpdate(BaseModel):
     description: Optional[str]
     result_state: Optional[ResultState]
     keywords: Optional[str]
-    ignored_keywords: Optional[str]
-    negative_info: Optional[str]
     asset_count: Optional[int]
     keyword_count: Optional[int]
 
@@ -106,14 +102,16 @@ class DatasetInDBBase(IdModelMixin, DateTimeModelMixin, IsDeletedModelMixin, Dat
         orm_mode = True
 
 
+class DatasetInDB(DatasetInDBBase):
+    pass
+
+
 # Properties to return to caller
 class Dataset(DatasetInDBBase):
     keywords: Optional[str]
-    ignored_keywords: Optional[str]
-    negative_info: Optional[str]
 
     # make sure all the json dumped value is unpacked before returning to caller
-    @validator("keywords", "ignored_keywords", "negative_info")
+    @validator("keywords")
     def unpack(cls, v: Optional[str]) -> Dict[str, int]:
         if v is None:
             return {}
@@ -137,57 +135,61 @@ class DatasetsOut(Common):
     result: List[Dataset]
 
 
-class DatasetStatsElement(BaseModel):
+class DatasetAnnotationHist(BaseModel):
+    quality: List[Dict]
+    area: List[Dict]
+    area_ratio: List[Dict]
+
+
+class DatasetAnnotation(BaseModel):
     keywords: Dict[str, int]
-    negative_images_count: int
-    positive_images_count: int
+    negative_assets_count: int
+    tags_count_total: Dict  # box tags in first level
+    tags_count: Dict  # box tags in second level
 
-    class Config:
-        orm_mode = True
-
-
-class DatasetStats(BaseModel):
-    gt: DatasetStatsElement
-    pred: DatasetStatsElement
-
-    class Config:
-        orm_mode = True
+    hist: Optional[DatasetAnnotationHist]
+    annos_count: Optional[int]
+    ave_annos_count: Optional[float]
 
 
-class DatasetStatsOut(Common):
-    result: DatasetStats
+class DatasetInfo(DatasetInDBBase):
+    gt: Optional[DatasetAnnotation]
+    pred: Optional[DatasetAnnotation]
+
+    keywords: Optional[Any]
+    cks_count: Optional[Dict]
+    cks_count_total: Optional[Dict]
+
+    total_assets_count: Optional[int]
+
+    # make sure all the json dumped value is unpacked before returning to caller
+    @validator("keywords")
+    def unpack(cls, v: Optional[Union[str, Dict]]) -> Dict[str, int]:
+        if v is None:
+            return {}
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+
+
+class DatasetInfoOut(Common):
+    result: DatasetInfo
 
 
 class DatasetHist(BaseModel):
-    asset_bytes: List[Dict]
-    asset_area: List[Dict]
-    asset_quality: List[Dict]
-    asset_hw_ratio: List[Dict]
-    anno_area_ratio: List[Dict]
-    anno_quality: List[Dict]
-    class_names_count: Dict[str, int]
-
-    class Config:
-        orm_mode = True
+    bytes: List[Dict]
+    area: List[Dict]
+    quality: List[Dict]
+    hw_ratio: List[Dict]
 
 
-class DatasetsAnalysis(DatasetHist):
-    group_name: str
-    version_num: int
-    total_asset_mbytes: int
-    total_assets_cnt: int
-    annos_cnt: int
-    ave_annos_cnt: float
-    positive_asset_cnt: int
-    negative_asset_cnt: int
-
-
-class DatasetsAnalyses(BaseModel):
-    datasets: List[DatasetsAnalysis]
+class DatasetAnalysis(DatasetInfo):
+    total_assets_mbytes: Optional[int]
+    hist: Optional[DatasetHist]
 
 
 class DatasetsAnalysesOut(Common):
-    result: DatasetsAnalyses
+    result: List[DatasetAnalysis]
 
 
 class DatasetPaginationOut(Common):
@@ -217,8 +219,8 @@ class DatasetEvaluationCreate(BaseModel):
     dataset_ids: List[int]
     confidence_threshold: float
     iou_threshold: float
-    require_average_iou: Optional[bool] = False
-    need_pr_curve: Optional[bool] = True
+    require_average_iou: bool = False
+    need_pr_curve: bool = True
 
 
 class DatasetEvaluationOut(Common):
@@ -237,8 +239,9 @@ class DatasetCheckDuplicationOut(Common):
 
 class DatasetMergeCreate(BaseModel):
     project_id: int
-    dataset_id: int
-    include_datasets: Optional[List[int]]
+    dest_group_id: Optional[int]
+    dest_group_name: Optional[str]
+    include_datasets: List[int]
     exclude_datasets: Optional[List[int]]
     merge_strategy: MergeStrategy = Field(
         MergeStrategy.prefer_newest, description="strategy to merge multiple datasets"
@@ -247,8 +250,8 @@ class DatasetMergeCreate(BaseModel):
 
     @root_validator
     def confine_parameters(cls, values: Any) -> Any:
-        if values.get("include_datasets") is None and values.get("exclude_datasets") is None:
-            raise ValueError("include_datasets and exclude_datasets cannot all be None")
+        if values.get("dest_group_id") is None and values.get("dest_group_name") is None:
+            raise ValueError("dest_group_id and dest_group_name cannot both be None")
         return values
 
 

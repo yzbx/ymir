@@ -76,13 +76,18 @@ export function batchDatasets(ids) {
  */
 export function getAssetsOfDataset({
   id,
-  keyword = null,
+  type = 'keywords',
+  keywords = [],
+  cm = [],
+  annoType = [],
   offset = 0,
   limit = 20,
 }) {
   return request.get(`datasets/${id}/assets`, {
     params: {
-      keyword,
+      [type]: keywords.toString() || undefined,
+      cm_types: cm.toString() || undefined,
+      annotation_types: annoType.toString() || undefined,
       offset,
       limit,
     },
@@ -141,7 +146,13 @@ export function evaluate({ projectId, datasets, iou, everageIou, confidence }) {
  * @returns 
  */
 export function analysis(projectId, datasets) {
-  return request.get(`/datasets/analysis`, { params: { project_id: projectId, ids: datasets.toString() } })
+  return request.get(`/datasets/batch`, {
+    params: {
+      project_id: projectId,
+      ids: datasets.toString(),
+      verbose: true,
+    }
+  })
 }
 
 /**
@@ -215,7 +226,7 @@ export function getNegativeKeywords({
   dataset,
   keywords,
 }) {
-  return request.get(`/datasets/${dataset}/stats`, {
+  return request.get(`/datasets/${dataset}`, {
     params: {
       project_id: projectId,
       keywords: keywords.toString(),
