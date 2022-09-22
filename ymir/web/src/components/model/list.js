@@ -5,7 +5,7 @@ import { Link, useHistory } from "umi"
 import { Form, Input, Table, Modal, Row, Col, Tooltip, Pagination, Space, Empty, Button, message, Popover, } from "antd"
 
 import { diffTime } from '@/utils/date'
-import { states } from '@/constants/model'
+import { ResultStates } from '@/constants/common'
 import { TASKTYPES, TASKSTATES } from '@/constants/task'
 import t from "@/utils/t"
 
@@ -25,6 +25,7 @@ import {
 } from "@/components/common/icons"
 import EditStageCell from "./editStageCell"
 import { DescPop } from "../common/descPop"
+import useRerunAction from "../../hooks/useRerunAction"
 
 const { useForm } = Form
 
@@ -43,6 +44,7 @@ function Model({ pid, project = {}, iterations, groups, modelList, versions, que
   const hideRef = useRef(null)
   const delGroupRef = useRef(null)
   const terminateRef = useRef(null)
+  const generateRerun = useRerunAction()
 
   /** use effect must put on the top */
   useEffect(() => {
@@ -321,6 +323,7 @@ function Model({ pid, project = {}, iterations, groups, modelList, versions, que
         hidden: () => taskType !== TASKTYPES.TRAINING,
         icon: <BarchartIcon />,
       },
+      generateRerun(record),
       {
         key: "hide",
         label: t("common.action.hide"),
@@ -426,11 +429,11 @@ function Model({ pid, project = {}, iterations, groups, modelList, versions, que
   }
 
   function isValidModel(state) {
-    return states.VALID === state
+    return ResultStates.VALID === state
   }
 
   function isRunning(state) {
-    return states.READY === state
+    return ResultStates.READY === state
   }
 
   function add() {

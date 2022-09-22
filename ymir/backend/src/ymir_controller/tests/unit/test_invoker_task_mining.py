@@ -12,6 +12,7 @@ import tests.utils as test_utils
 from controller.utils import utils
 from controller.utils.invoker_call import make_invoker_cmd_call
 from controller.utils.invoker_mapping import RequestTypeToInvoker
+from mir.protos import mir_command_pb2 as mir_cmd_pb
 from proto import backend_pb2
 
 RET_ID = 'commit t000aaaabbbbbbzzzzzzzzzzzzzzz3\nabc'
@@ -89,12 +90,12 @@ class TestInvokerTaskMining(unittest.TestCase):
         top_k, model_hash, model_stage = 300, 'abc', 'first_stage'
         mine_task_req = backend_pb2.TaskReqMining()
         mine_task_req.top_k = top_k
-        mine_task_req.in_dataset_ids[:] = [self._guest_id1, self._guest_id2]
-        mine_task_req.ex_dataset_ids[:] = [self._guest_id3]
+        in_dataset_ids = [self._guest_id1, self._guest_id2]
+        ex_dataset_ids = [self._guest_id3]
         mine_task_req.generate_annotations = False
 
         req_create_task = backend_pb2.ReqCreateTask()
-        req_create_task.task_type = backend_pb2.TaskTypeMining
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeMining
         req_create_task.no_task_monitor = True
         req_create_task.mining.CopyFrom(mine_task_req)
         assets_config = {
@@ -108,7 +109,7 @@ class TestInvokerTaskMining(unittest.TestCase):
         }
 
         working_dir_root = os.path.join(self._sandbox_root, "work_dir",
-                                        backend_pb2.TaskType.Name(backend_pb2.TaskTypeMining), self._task_id)
+                                        mir_cmd_pb.TaskType.Name(mir_cmd_pb.TaskType.TaskTypeMining), self._task_id)
         os.makedirs(working_dir_root, exist_ok=True)
         working_dir_0 = os.path.join(working_dir_root, 'sub_task', self._sub_task_id_0)
         os.makedirs(working_dir_0, exist_ok=True)
@@ -134,6 +135,8 @@ class TestInvokerTaskMining(unittest.TestCase):
             singleton_op='mining_image',
             model_hash=model_hash,
             model_stage=model_stage,
+            in_dataset_ids=in_dataset_ids,
+            ex_dataset_ids=ex_dataset_ids,
             docker_image_config=json.dumps(mining_config),
         )
         print(MessageToDict(response))

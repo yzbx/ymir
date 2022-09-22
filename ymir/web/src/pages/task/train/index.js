@@ -15,7 +15,7 @@ import useFetch from '@/hooks/useFetch'
 import Breadcrumbs from "@/components/common/breadcrumb"
 import ImageSelect from "@/components/form/imageSelect"
 import ModelSelect from "@/components/form/modelSelect"
-import KeywordRates from "@/components/dataset/keywordRates"
+import SampleRates from "@/components/dataset/sampleRates"
 import CheckProjectDirty from "@/components/common/CheckProjectDirty"
 import LiveCodeForm from "../components/liveCodeForm"
 import { removeLiveCodeConfig } from "../components/liveCodeConfig"
@@ -31,17 +31,12 @@ import useDuplicatedCheck from "../../../hooks/useDuplicatedCheck"
 
 const TrainType = [{ value: "detection", label: 'task.train.form.traintypes.detect', checked: true }]
 
-const duplicatedOptions = [
-  { value: 1, label: 'task.train.duplicated.option.train' },
-  { value: 2, label: 'task.train.duplicated.option.validation' }
-]
-
 function Train({ allDatasets, datasetCache, ...func }) {
   const pageParams = useParams()
   const pid = Number(pageParams.id)
   const history = useHistory()
   const location = useLocation()
-  const { mid, image, iterationId, outputKey, currentStage, test } = location.query
+  const { mid, image, iterationId, outputKey, currentStage, test, from } = location.query
   const stage = string2Array(mid)
   const did = Number(location.query.did)
   const [project, setProject] = useState({})
@@ -60,7 +55,11 @@ function Train({ allDatasets, datasetCache, ...func }) {
   const [openpai, setOpenpai] = useState(false)
   const checkDuplicated = useDuplicatedCheck(submit)
   const [sys, getSysInfo] = useFetch('common/getSysInfo', {})
+  const [updated, updateProject] = useFetch('project/updateProject')
+
   const selectOpenpai = Form.useWatch('openpai', form)
+  const [showConfig, setShowConfig] = useState(false)
+  const iterationContext = from === 'iteration'
 
   const renderRadio = (types) => <Radio.Group options={types.map(type => ({ ...type, label: t(type.label) }))} />
 
@@ -82,7 +81,7 @@ function Train({ allDatasets, datasetCache, ...func }) {
 
   useEffect(() => {
     setTestingSetIds(project?.testingSets || [])
-    iterationId && setSelectedKeywords(project?.keywords || [])
+    iterationContext && setSelectedKeywords(project?.keywords || [])
   }, [project])
 
   useEffect(() => {
@@ -111,7 +110,42 @@ function Train({ allDatasets, datasetCache, ...func }) {
     form.setFieldsValue({ hyperparam: seniorConfig })
   }, [seniorConfig])
 
-  useEffect(() => (trainDataset && !iterationId) && setAllKeywords(), [trainDataset])
+  useEffect(() => (trainDataset && !iterationContext) && setAllKeywords(), [trainDataset])
+
+  useEffect(() => {
+    const state = location.state
+
+    if (state?.record) {
+      const { task: { parameters, config }, description, } = state.record
+      const {
+        dataset_id,
+        validation_dataset_id,
+        strategy,
+        docker_image,
+        docker_image_id,
+        model_id,
+        model_stage_id,
+        keywords,
+      } = parameters
+      form.setFieldsValue({
+        datasetId: dataset_id,
+        keywords: keywords,
+        testset: validation_dataset_id,
+        gpu_count: config.gpu_count,
+        model: [model_id, model_stage_id],
+        image: docker_image_id + ',' + docker_image,
+        strategy,
+        description,
+      })
+      setTimeout(() => setConfig(config), 500)
+      setTestSet(validation_dataset_id)
+      setTrainSet(dataset_id)
+      setSelectedKeywords(keywords)
+      setShowConfig(true)
+
+      history.replace({ state: {} })
+    }
+  }, [location.state])
 
   async function fetchProject() {
     const project = await func.getProject(pid)
@@ -149,7 +183,7 @@ function Train({ allDatasets, datasetCache, ...func }) {
 
   const onFinish = () => checkDuplicated(trainDataset, validationDataset)
 
-  async function submit (strategy) {
+  async function submit(strategy) {
     const values = form.getFieldsValue()
     const config = {
       ...values.hyperparam?.reduce(
@@ -171,7 +205,7 @@ function Train({ allDatasets, datasetCache, ...func }) {
       strategy,
       name: 'group_' + randomNumber(),
       projectId: pid,
-      keywords: iterationId ? project.keywords : values.keywords,
+      keywords: iterationContext ? project.keywords : values.keywords,
       image,
       imageId,
       config,
@@ -181,9 +215,16 @@ function Train({ allDatasets, datasetCache, ...func }) {
       if (iterationId) {
         func.updateIteration({ id: iterationId, currentStage, [outputKey]: result.result_model.id })
       }
+      if (iterationContext && !iterationId) {
+        await updateProject({ modelStage: [result.result_model?.id] })
+      }
       await func.clearCache()
       const group = result.result_model?.model_group_id || ''
-      history.replace(`/home/project/${pid}/model#${group}`)
+      let redirect = `/home/project/${pid}/model#${group}`
+      if (iterationContext) {
+        redirect = `/home/project/${pid}/iterations`
+      }
+      history.replace(redirect)
     }
   }
 
@@ -248,9 +289,6 @@ function Train({ allDatasets, datasetCache, ...func }) {
                 onChange={trainSetChange}
               />
             </Form.Item>
-            <Form.Item hidden={!trainSet} label={t('dataset.train.form.samples')}>
-              <KeywordRates keywords={selectedKeywords} dataset={trainDataset}></KeywordRates>
-            </Form.Item>
             {iterationId ? <Form.Item label={t('task.train.form.keywords.label')}>
               {project?.keywords?.map(keyword => <Tag key={keyword}>{keyword}</Tag>)}
             </Form.Item> :
@@ -269,8 +307,12 @@ function Train({ allDatasets, datasetCache, ...func }) {
                   placeholder={t('project.add.form.keyword.required')}
                   onChange={setSelectedKeywords}
                   options={(trainDataset?.gt?.keywords || []).map(k => ({ label: k, value: k }))}
+                  maxTagCount={5}
                 />
               </Form.Item>}
+            <Form.Item label={t('dataset.train.form.samples')}>
+              <SampleRates keywords={selectedKeywords} dataset={trainDataset} negative />
+            </Form.Item>
             <Form.Item
               label={t('task.train.form.testsets.label')}
               name="testset"
@@ -314,7 +356,7 @@ function Train({ allDatasets, datasetCache, ...func }) {
               <TrainFormat />
             </Form.Item>
             <LiveCodeForm form={form} live={live} />
-            <DockerConfigForm seniorConfig={seniorConfig} form={form} />
+            <DockerConfigForm show={showConfig} seniorConfig={seniorConfig} form={form} />
             <Desc form={form} />
             <Form.Item wrapperCol={{ offset: 8 }}>
               <Space size={20}>

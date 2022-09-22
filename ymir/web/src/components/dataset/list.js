@@ -7,8 +7,8 @@ import { Form, Button, Input, Table, Space, Modal, Row, Col, Tooltip, Pagination
 import t from "@/utils/t"
 import { humanize } from "@/utils/number"
 import { diffTime } from '@/utils/date'
-import { getTaskTypeLabel, TASKSTATES } from '@/constants/task'
-import { states } from '@/constants/dataset'
+import { getTaskTypeLabel, TASKSTATES, TASKTYPES } from '@/constants/task'
+import { ResultStates } from '@/constants/common'
 
 import CheckProjectDirty from "@/components/common/CheckProjectDirty"
 import StateTag from "@/components/task/stateTag"
@@ -25,6 +25,8 @@ import {
   CompareListIcon,
 } from "@/components/common/icons"
 import { DescPop } from "../common/descPop"
+import { RefreshIcon } from "../common/icons"
+import useRerunAction from "../../hooks/useRerunAction"
 
 const { confirm } = Modal
 const { useForm } = Form
@@ -44,6 +46,7 @@ function Datasets({ pid, project = {}, iterations, groups, datasetList, query, v
   let [lock, setLock] = useState(true)
   const terminateRef = useRef(null)
   const [testingSetIds, setTestingSetIds] = useState([])
+  const generateRerun = useRerunAction()
 
   /** use effect must put on the top */
   useEffect(() => {
@@ -221,18 +224,11 @@ function Datasets({ pid, project = {}, iterations, groups, datasetList, query, v
     const invalidDataset = ({ state, assetCount }) => !isValidDataset(state) || assetCount === 0
     const menus = [
       {
-        key: "merge",
-        label: t("common.action.merge"),
-        hidden: () => !isValidDataset(state),
-        onclick: () => history.push(`/home/project/${pid}/merge?did=${id}`),
-        icon: <CompareListIcon className={styles.addBtnIcon} />,
-      },
-      {
-        key: "filter",
-        label: t("common.action.filter"),
-        hidden: () => !isValidDataset(state),
-        onclick: () => history.push(`/home/project/${pid}/filter?did=${id}`),
-        icon: <ScreenIcon className={styles.addBtnIcon} />,
+        key: "label",
+        label: t("dataset.action.label"),
+        hidden: () => invalidDataset(record),
+        onclick: () => history.push(`/home/project/${pid}/label?did=${id}`),
+        icon: <TaggingIcon />,
       },
       {
         key: "train",
@@ -249,18 +245,25 @@ function Datasets({ pid, project = {}, iterations, groups, datasetList, query, v
         icon: <VectorIcon />,
       },
       {
+        key: "merge",
+        label: t("common.action.merge"),
+        hidden: () => !isValidDataset(state),
+        onclick: () => history.push(`/home/project/${pid}/merge?did=${id}`),
+        icon: <CompareListIcon className={styles.addBtnIcon} />,
+      },
+      {
+        key: "filter",
+        label: t("common.action.filter"),
+        hidden: () => !isValidDataset(state),
+        onclick: () => history.push(`/home/project/${pid}/filter?did=${id}`),
+        icon: <ScreenIcon className={styles.addBtnIcon} />,
+      },
+      {
         key: "inference",
         label: t("dataset.action.inference"),
         hidden: () => invalidDataset(record),
         onclick: () => history.push(`/home/project/${pid}/inference?did=${id}`),
         icon: <WajueIcon />,
-      },
-      {
-        key: "label",
-        label: t("dataset.action.label"),
-        hidden: () => invalidDataset(record),
-        onclick: () => history.push(`/home/project/${pid}/label?did=${id}`),
-        icon: <TaggingIcon />,
       },
       {
         key: "copy",
@@ -276,6 +279,7 @@ function Datasets({ pid, project = {}, iterations, groups, datasetList, query, v
         hidden: () => taskState === TASKSTATES.PENDING || !isRunning(state) || task.is_terminated,
         icon: <StopIcon />,
       },
+      generateRerun(record),
       {
         key: "hide",
         label: t("common.action.hide"),
@@ -474,6 +478,11 @@ function Datasets({ pid, project = {}, iterations, groups, datasetList, query, v
     history.push(`/home/project/${pid}/inference?did=${ids}`)
   }
 
+  const batchMerge = () => {
+    const ids = selectedVersions.selected.join(',')
+    history.push(`/home/project/${pid}/merge?mid=${ids}`)
+  }
+
   const getDisabledStatus = (filter = () => { }) => {
     const allVss = Object.values(versions).flat()
     const { selected } = selectedVersions
@@ -481,11 +490,11 @@ function Datasets({ pid, project = {}, iterations, groups, datasetList, query, v
   }
 
   function isValidDataset(state) {
-    return states.VALID === state
+    return ResultStates.VALID === state
   }
 
   function isRunning(state) {
-    return state === states.READY
+    return state === ResultStates.READY
   }
 
   function isTestingDataset(id) {
@@ -504,6 +513,9 @@ function Datasets({ pid, project = {}, iterations, groups, datasetList, query, v
     </Button>
     <Button type="primary" disabled={getDisabledStatus(({ state }) => !isValidDataset(state))} onClick={multipleInfer}>
       <WajueIcon /> {t("common.action.multiple.infer")}
+    </Button>
+    <Button type="primary" disabled={getDisabledStatus(({ state }) => !isValidDataset(state))} onClick={batchMerge}>
+      <WajueIcon /> {t("common.action.multiple.merge")}
     </Button>
   </>
 

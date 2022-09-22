@@ -13,16 +13,16 @@ from app.api.errors.errors import (
     InvalidScope,
     InvalidToken,
     UserNotFound,
+    SystemVersionConflict,
 )
 from app.config import settings
 from app.constants.role import Roles
 from app.db.session import SessionLocal
 from app.utils import cache as ymir_cache
 from app.utils import graph, security, ymir_controller, ymir_viz
-from app.utils.clickhouse import YmirClickHouse
 from app.utils.security import verify_api_key
 from app.utils.ymir_controller import ControllerClient
-from common_utils.labels import UserLabels
+from common_utils.labels import UserLabels, YMIR_VERSION
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/auth/token",
@@ -63,6 +63,10 @@ def get_current_user(
     except (jwt.JWTError, ValidationError):
         logger.exception("Invalid JWT token")
         raise InvalidToken()
+
+    if token_data.version != YMIR_VERSION:
+        raise SystemVersionConflict()
+
     user = crud.user.get(db, id=token_data.id)
     if not user:
         raise UserNotFound()
@@ -112,7 +116,7 @@ def get_controller_client() -> Generator:
 
 def get_viz_client() -> Generator:
     try:
-        client = ymir_viz.VizClient(host=settings.VIZ_HOST)
+        client = ymir_viz.VizClient()
         yield client
     finally:
         client.close()
@@ -163,11 +167,3 @@ def get_user_labels(
 
     cache.set(ymir_cache.KEYWORDS_CACHE_KEY, user_labels.json())
     return user_labels
-
-
-def get_clickhouse_client() -> Generator:
-    try:
-        clickhouse_client = YmirClickHouse(settings.CLICKHOUSE_URI)
-        yield clickhouse_client
-    finally:
-        clickhouse_client.close()

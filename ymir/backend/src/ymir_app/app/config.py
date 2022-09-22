@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     NGINX_PREFIX: str = ""
     API_V1_STR: str = "/api/v1"
     DATABASE_URI: str = "sqlite:///app.db"
-    CLICKHOUSE_URI: str = "clickhouse"
     TOKEN_URL: str = "/auth/token"
     GRPC_CHANNEL: str = "controller:50066"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 40  # 40 hours
@@ -23,7 +22,6 @@ class Settings(BaseSettings):
     REGISTRATION_NEEDS_APPROVAL: bool = False
 
     # assets viz
-    VIZ_HOST: str = "viz:9099"
     VIZ_TIMEOUT: int = 30
 
     FIRST_ADMIN: EmailStr = "admin@example.com"  # type: ignore

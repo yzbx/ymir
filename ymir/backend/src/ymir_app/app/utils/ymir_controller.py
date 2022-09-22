@@ -16,6 +16,7 @@ from app.schemas.dataset import ImportStrategy, MergeStrategy
 from app.schemas.task import TrainingDatasetsStrategy
 from common_utils.labels import UserLabels
 from id_definition.task_id import TaskId
+from mir.protos import mir_command_pb2 as mir_cmd_pb
 from proto import backend_pb2 as mirsvrpb
 from proto import backend_pb2_grpc as mir_grpc
 
@@ -36,29 +37,29 @@ class ExtraRequestType(enum.IntEnum):
 
 
 MERGE_STRATEGY_MAPPING = {
-    MergeStrategy.stop_upon_conflict: mirsvrpb.STOP,
-    MergeStrategy.prefer_newest: mirsvrpb.HOST,
-    MergeStrategy.prefer_oldest: mirsvrpb.HOST,
+    MergeStrategy.stop_upon_conflict: mirsvrpb.MergeStrategy.STOP,
+    MergeStrategy.prefer_newest: mirsvrpb.MergeStrategy.HOST,
+    MergeStrategy.prefer_oldest: mirsvrpb.MergeStrategy.HOST,
 }
 
 
 TRAINING_DATASET_STRATEGY_MAPPING = {
-    TrainingDatasetsStrategy.stop: mirsvrpb.STOP,
-    TrainingDatasetsStrategy.as_training: mirsvrpb.HOST,
-    TrainingDatasetsStrategy.as_validation: mirsvrpb.GUEST,
+    TrainingDatasetsStrategy.stop: mirsvrpb.MergeStrategy.STOP,
+    TrainingDatasetsStrategy.as_training: mirsvrpb.MergeStrategy.HOST,
+    TrainingDatasetsStrategy.as_validation: mirsvrpb.MergeStrategy.GUEST,
 }
 
 
 IMPORTING_STRATEGY_MAPPING = {
-    ImportStrategy.no_annotations: mirsvrpb.UTS_IGNORE,
-    ImportStrategy.ignore_unknown_annotations: mirsvrpb.UTS_IGNORE,
-    ImportStrategy.stop_upon_unknown_annotations: mirsvrpb.UTS_STOP,
-    ImportStrategy.add_unknown_annotations: mirsvrpb.UTS_ADD,
+    ImportStrategy.no_annotations: mirsvrpb.UnknownTypesStrategy.UTS_IGNORE,
+    ImportStrategy.ignore_unknown_annotations: mirsvrpb.UnknownTypesStrategy.UTS_IGNORE,
+    ImportStrategy.stop_upon_unknown_annotations: mirsvrpb.UnknownTypesStrategy.UTS_STOP,
+    ImportStrategy.add_unknown_annotations: mirsvrpb.UnknownTypesStrategy.UTS_ADD,
 }
 
 ANNOTATION_TYPE_MAPPING = {
-    AnnotationType.gt: mirsvrpb.GT,
-    AnnotationType.pred: mirsvrpb.PRED,
+    AnnotationType.gt: mirsvrpb.AnnotationType.GT,
+    AnnotationType.pred: mirsvrpb.AnnotationType.PRED,
 }
 
 
@@ -116,25 +117,25 @@ class ControllerRequest:
         return request
 
     def prepare_training(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
+        request.in_class_ids[:] = args["class_ids"]
         train_task_req = mirsvrpb.TaskReqTraining()
         datasets = itertools.chain(
-            gen_typed_datasets(mirsvrpb.TvtTypeTraining, [args["dataset_hash"]]),
-            gen_typed_datasets(mirsvrpb.TvtTypeValidation, [args["validation_dataset_hash"]]),
+            gen_typed_datasets(mir_cmd_pb.TvtTypeTraining, [args["dataset_hash"]]),
+            gen_typed_datasets(mir_cmd_pb.TvtTypeValidation, [args["validation_dataset_hash"]]),
         )
         for dataset in datasets:
             train_task_req.in_dataset_types.append(dataset)
-        train_task_req.in_class_ids[:] = args["class_ids"]
         if args.get("preprocess"):
             train_task_req.preprocess_config = args["preprocess"]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeTraining
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeTraining
         req_create_task.training.CopyFrom(train_task_req)
 
         if args.get("model_hash"):
             request.model_hash = args["model_hash"]
             request.model_stage = args["model_stage_name"]
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.singleton_op = args["docker_image"]
         request.docker_image_config = args["docker_config"]
         # stop if training_dataset and validation_dataset share any assets
@@ -143,17 +144,17 @@ class ControllerRequest:
         return request
 
     def prepare_mining(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
+        request.in_dataset_ids[:] = [args["dataset_hash"]]
         mine_task_req = mirsvrpb.TaskReqMining()
         if args.get("top_k"):
             mine_task_req.top_k = args["top_k"]
-        mine_task_req.in_dataset_ids[:] = [args["dataset_hash"]]
         mine_task_req.generate_annotations = args["generate_annotations"]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeMining
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeMining
         req_create_task.mining.CopyFrom(mine_task_req)
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.singleton_op = args["docker_image"]
         request.docker_image_config = args["docker_config"]
         request.model_hash = args["model_hash"]
@@ -162,33 +163,33 @@ class ControllerRequest:
         return request
 
     def prepare_import_data(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
-        importing_request = mirsvrpb.TaskReqImporting()
+        import_dataset_request = mirsvrpb.TaskReqImportDataset()
 
-        importing_request.asset_dir = args["asset_dir"]
+        import_dataset_request.asset_dir = args["asset_dir"]
         strategy = args.get("strategy") or ImportStrategy.ignore_unknown_annotations
         if strategy != ImportStrategy.no_annotations:
             if args.get("gt_dir"):
-                importing_request.gt_dir = args["gt_dir"]
+                import_dataset_request.gt_dir = args["gt_dir"]
             if args.get("pred_dir"):
-                importing_request.pred_dir = args["pred_dir"]
-        importing_request.clean_dirs = args["clean_dirs"]
+                import_dataset_request.pred_dir = args["pred_dir"]
+        import_dataset_request.clean_dirs = args["clean_dirs"]
 
-        importing_request.unknown_types_strategy = IMPORTING_STRATEGY_MAPPING[strategy]
+        import_dataset_request.unknown_types_strategy = IMPORTING_STRATEGY_MAPPING[strategy]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeImportData
-        req_create_task.importing.CopyFrom(importing_request)
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeImportData
+        req_create_task.import_dataset.CopyFrom(import_dataset_request)
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.req_create_task.CopyFrom(req_create_task)
         return request
 
     def prepare_label(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
+        request.in_dataset_ids[:] = [args["dataset_hash"]]
+        request.in_class_ids[:] = args["class_ids"]
         label_request = mirsvrpb.TaskReqLabeling()
         label_request.project_name = f"label_${args['dataset_name']}"
-        label_request.dataset_id = args["dataset_hash"]
         label_request.labeler_accounts[:] = args["labellers"]
-        label_request.in_class_ids[:] = args["class_ids"]
 
         # pre annotation
         if args.get("annotation_type"):
@@ -198,14 +199,15 @@ class ControllerRequest:
             label_request.expert_instruction_url = args["extra_url"]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeLabel
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeLabel
         req_create_task.labeling.CopyFrom(label_request)
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.req_create_task.CopyFrom(req_create_task)
         return request
 
     def prepare_copy_data(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
+        request.in_dataset_ids[:] = [args["src_resource_id"]]
         copy_request = mirsvrpb.TaskReqCopyData()
         strategy = args.get("strategy") or ImportStrategy.ignore_unknown_annotations
         if strategy is ImportStrategy.ignore_unknown_annotations:
@@ -219,13 +221,12 @@ class ControllerRequest:
 
         copy_request.src_user_id = args["src_user_id"]
         copy_request.src_repo_id = args["src_repo_id"]
-        copy_request.src_dataset_id = args["src_resource_id"]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeCopyData
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeCopyData
         req_create_task.copy.CopyFrom(copy_request)
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.req_create_task.CopyFrom(req_create_task)
         return request
 
@@ -264,43 +265,39 @@ class ControllerRequest:
         return request
 
     def prepare_data_fusion(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
-        data_fusion_request = mirsvrpb.TaskReqFusion()
-        data_fusion_request.in_dataset_ids[:] = args["include_datasets"]
-        data_fusion_request.merge_strategy = MERGE_STRATEGY_MAPPING[
-            args.get("strategy", MergeStrategy.stop_upon_conflict)
-        ]
+        request.in_dataset_ids[:] = args["include_datasets"]
+        request.merge_strategy = MERGE_STRATEGY_MAPPING[args.get("strategy", MergeStrategy.stop_upon_conflict)]
         if args.get("exclude_datasets"):
-            data_fusion_request.ex_dataset_ids[:] = args["exclude_datasets"]
+            request.ex_dataset_ids[:] = args["exclude_datasets"]
 
         if args.get("include_class_ids"):
-            data_fusion_request.in_class_ids[:] = args["include_class_ids"]
+            request.in_class_ids[:] = args["include_class_ids"]
         if args.get("exclude_class_ids"):
-            data_fusion_request.ex_class_ids[:] = args["exclude_class_ids"]
+            request.ex_class_ids[:] = args["exclude_class_ids"]
 
         if args.get("sampling_count"):
-            data_fusion_request.count = args["sampling_count"]
+            request.sampling_count = args["sampling_count"]
         else:
             # not sampling
-            data_fusion_request.rate = 1
+            request.sampling_rate = 1
 
         req_create_task = mirsvrpb.ReqCreateTask()
 
-        req_create_task.task_type = mirsvrpb.TaskTypeFusion
-        req_create_task.fusion.CopyFrom(data_fusion_request)
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeFusion
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.req_create_task.CopyFrom(req_create_task)
         return request
 
     def prepare_import_model(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
-        model_importing = mirsvrpb.TaskReqModelImporting()
-        model_importing.model_package_path = args["model_package_path"]
+        import_model_request = mirsvrpb.TaskReqImportModel()
+        import_model_request.model_package_path = args["model_package_path"]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeImportModel
-        req_create_task.model_importing.CopyFrom(model_importing)
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeImportModel
+        req_create_task.import_model.CopyFrom(import_model_request)
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.req_create_task.CopyFrom(req_create_task)
 
         return request
@@ -309,13 +306,13 @@ class ControllerRequest:
         copy_request = mirsvrpb.TaskReqCopyData()
         copy_request.src_user_id = args["src_user_id"]
         copy_request.src_repo_id = args["src_repo_id"]
-        copy_request.src_dataset_id = args["src_resource_id"]
+        request.in_dataset_ids[:] = [args["src_resource_id"]]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeCopyModel
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeCopyModel
         req_create_task.copy.CopyFrom(copy_request)
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.req_create_task.CopyFrom(req_create_task)
 
         return request
@@ -325,14 +322,15 @@ class ControllerRequest:
         return self.prepare_mining(request, args)
 
     def prepare_evaluate(self, request: mirsvrpb.GeneralReq, args: Dict) -> mirsvrpb.GeneralReq:
-        evaluate_config = mirsvrpb.EvaluateConfig()
+        evaluate_config = mir_cmd_pb.EvaluateConfig()
         evaluate_config.conf_thr = args["confidence_threshold"]
-        evaluate_config.iou_thrs_interval = "0.5:1:0.05"
-        evaluate_config.need_pr_curve = False
+        evaluate_config.iou_thrs_interval = args["iou_thrs_interval"]
+        evaluate_config.need_pr_curve = args["need_pr_curve"]
+        if args.get("main_ck"):
+            evaluate_config.main_ck = args["main_ck"]
 
         request.req_type = mirsvrpb.CMD_EVALUATE
-        request.singleton_op = args["gt_dataset_hash"]
-        request.in_dataset_ids[:] = args["other_dataset_hashes"]
+        request.in_dataset_ids[:] = [args["dataset_hash"]]
         request.evaluate_config.CopyFrom(evaluate_config)
         return request
 
@@ -355,10 +353,10 @@ class ControllerRequest:
             visualization_task_req.conf_thr = args["conf_thr"]
 
         req_create_task = mirsvrpb.ReqCreateTask()
-        req_create_task.task_type = mirsvrpb.TaskTypeVisualization
+        req_create_task.task_type = mir_cmd_pb.TaskType.TaskTypeVisualization
         req_create_task.visualization.CopyFrom(visualization_task_req)
 
-        request.req_type = mirsvrpb.TASK_CREATE
+        request.req_type = mirsvrpb.RequestType.TASK_CREATE
         request.req_create_task.CopyFrom(req_create_task)
         return request
 
@@ -529,23 +527,29 @@ class ControllerClient:
         self,
         user_id: int,
         project_id: int,
-        task_id: str,
+        user_labels: UserLabels,
         confidence_threshold: float,
-        gt_dataset_hash: str,
-        other_dataset_hashes: List[str],
+        iou_thrs_interval: str,
+        need_pr_curve: bool,
+        main_ck: Optional[str],
+        dataset_hash: str,
     ) -> Dict:
         req = ControllerRequest(
             type=ExtraRequestType.evaluate,
             user_id=user_id,
             project_id=project_id,
-            task_id=task_id,
             args={
                 "confidence_threshold": confidence_threshold,
-                "gt_dataset_hash": gt_dataset_hash,
-                "other_dataset_hashes": other_dataset_hashes,
+                "dataset_hash": dataset_hash,
+                "iou_thrs_interval": iou_thrs_interval,
+                "need_pr_curve": need_pr_curve,
+                "main_ck": main_ck,
             },
         )
-        return self.send(req)
+        resp = self.send(req)
+        evaluation_result = resp["evaluation"]
+        convert_class_id_to_keyword(evaluation_result, user_labels)
+        return {dataset_hash: evaluation_result}
 
     def check_repo_status(self, user_id: int, project_id: int) -> bool:
         req = ControllerRequest(
@@ -632,3 +636,12 @@ class ControllerClient:
             },
         )
         return self.send(req)
+
+
+def convert_class_id_to_keyword(obj: Dict, user_labels: UserLabels) -> None:
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "ci_evaluations":
+                obj[key] = {user_labels.get_main_name(k): v for k, v in value.items()}
+            else:
+                convert_class_id_to_keyword(obj[key], user_labels)

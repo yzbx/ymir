@@ -16,6 +16,8 @@ import Desc from "@/components/form/desc"
 
 import s from './add.less'
 import samplePic from '@/assets/sample.png'
+import DatasetName from '../../components/form/items/datasetName'
+import { FormatDetailModal } from './components/formatDetailModal'
 
 const { Option } = Select
 const { useForm } = Form
@@ -61,6 +63,7 @@ const Add = (props) => {
   const [defaultName, setDefaultName] = useState('')
   const netUrl = Form.useWatch('url', form)
   const path = Form.useWatch('path', form)
+  const [formatDetailModal, setFormatDetailModal] = useState(false)
 
   useEffect(() => {
     form.setFieldsValue({ datasetId: null })
@@ -182,8 +185,7 @@ const Add = (props) => {
   }
 
   function addDefaultName(name = '') {
-    const datasetName = form.getFieldValue('name')
-    if (!nameChangedByUser || !datasetName) {
+    if (!nameChangedByUser) {
       form.setFieldsValue({ name })
     }
   }
@@ -211,9 +213,14 @@ const Add = (props) => {
     return set?.keywords || []
   }
 
+  function showFormatDetail() {
+    setFormatDetailModal(true)
+  }
+
   const structureTip = t('dataset.add.form.tip.structure', {
     br: <br />,
-    pic: <img src={samplePic} />
+    pic: <img src={samplePic} />,
+    detail: <Button onClick={showFormatDetail}>{t('dataset.add.form.tip.format.detail')}</Button>,
   })
 
   const renderTip = (type, params = {}) => t(`dataset.add.form.${type}.tip`, {
@@ -235,16 +242,9 @@ const Add = (props) => {
             onFinish={submit}
             onFinishFailed={onFinishFailed}
           >
-            <Form.Item
-              label={t('dataset.add.form.name.label')}
-              name='name'
-              rules={[
-                { required: true, whitespace: true, message: t('dataset.add.form.name.required') },
-                { type: 'string', min: 2, max: 80 },
-              ]}
-            >
-              <Input autoComplete={'off'} onKeyUp={() => setNameChangedByUser(true)} allowClear />
-            </Form.Item>
+            <DatasetName inputProps={{
+              onKeyUp: () => setNameChangedByUser(true)
+            }} />
             <Form.Item label={t('dataset.add.form.type.label')}>
               <Select onChange={(value) => typeChange(value)} defaultValue={TYPES.INTERNAL}>
                 {types.map(type => (
@@ -365,6 +365,7 @@ const Add = (props) => {
           </Form>
         </div>
       </Card>
+      <FormatDetailModal title={t('dataset.add.form.tip.format.detail')} visible={formatDetailModal} onCancel={() => setFormatDetailModal(false)} />
     </div>
   )
 }

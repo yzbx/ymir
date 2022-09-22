@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import re
 from typing import Any, Dict, Iterator, List, Set, Union
 
 import fasteners  # type: ignore
@@ -8,6 +9,7 @@ from google.protobuf import json_format
 from pydantic import BaseModel, root_validator, validator
 import yaml
 
+from mir.version import YMIR_VERSION
 from proto import backend_pb2
 
 EXPECTED_FILE_VERSION = 1
@@ -31,12 +33,19 @@ class SingleLabel(BaseModel):
 
 class LabelStorage(BaseModel):
     version: int = EXPECTED_FILE_VERSION
+    ymir_version: str = YMIR_VERSION
     labels: List[SingleLabel] = []
 
     @validator('version')
     def _check_version(cls, v: int) -> int:
         if v != EXPECTED_FILE_VERSION:
-            raise ValueError(f"incorrect version: {v}, needed {EXPECTED_FILE_VERSION}")
+            raise ValueError(f"incorrect version: {v}, expect: {EXPECTED_FILE_VERSION}")
+        return v
+
+    @validator('ymir_version')
+    def _check_ymir_version(cls, v: str) -> str:
+        if v and not re.match(pattern=r'^\d+\.\d+\.\d+$', string=v):
+            raise ValueError(f"incorrect ymir version: {v}, expect: #.#.#")
         return v
 
     @validator('labels')
@@ -78,13 +87,19 @@ class UserLabels(LabelStorage):
     class Config:
         fields = {'labels': {'include': True}}
 
-    def get_class_ids(self, names_or_aliases: Union[str, List[str]]) -> List[int]:
+    def get_class_ids(self, names_or_aliases: Union[str, List[str]], raise_if_unknown: bool = True) -> List[int]:
         if isinstance(names_or_aliases, str):
-            return [self.name_aliases_to_id[names_or_aliases]]
+            ret = [self.name_aliases_to_id.get(names_or_aliases, -1)]
         elif isinstance(names_or_aliases, list):
-            return [self.name_aliases_to_id[name_or_aliaes] for name_or_aliaes in names_or_aliases]
+            ret = [self.name_aliases_to_id.get(name_or_aliaes, -1) for name_or_aliaes in names_or_aliases]
         else:
             raise ValueError(f"unsupported type: {type(names_or_aliases)}")
+
+        if raise_if_unknown:
+            for id in ret:
+                if id < 0:
+                    raise ValueError(f"unknown class found: {names_or_aliases}")
+        return ret
 
     def get_main_names(self, class_ids: Union[int, List[int]]) -> List[str]:
         if isinstance(class_ids, int):

@@ -214,6 +214,12 @@ class InvalidToken(APIError):
     message = "Invalid Token"
 
 
+class SystemVersionConflict(APIError):
+    status_code = 401
+    code = error_codes.SYSTEM_VERSION_CONFLICT
+    message = "System Version Conflict"
+
+
 class InvalidScope(APIError):
     status_code = 401
     code = error_codes.INVALID_SCOPE
@@ -295,11 +301,6 @@ class FailedToUpdateTaskStatus(APIError):
     message = "Failed to Update Task Status"
 
 
-class FailedToConnectClickHouse(APIError):
-    code = error_codes.FAILED_TO_CONNECT_CLICKHOUSE
-    message = "Failed to Connect ClickHouse"
-
-
 class FailedToCreateProject(APIError):
     code = error_codes.PROJECT_FAILED_TO_CREATE
     message = "Failed to Create Project"
@@ -308,6 +309,11 @@ class FailedToCreateProject(APIError):
 class ProjectNotFound(NotFound):
     code = error_codes.PROJECT_NOT_FOUND
     message = "Project Not Found"
+
+
+class InvalidProject(APIError):
+    code = error_codes.INVALID_PROJECT
+    message = "Invalid Project"
 
 
 class VisualizationNotFound(NotFound):

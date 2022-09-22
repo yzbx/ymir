@@ -60,7 +60,7 @@ const common = {
   'common.action.train': {cn: '训练', en: 'Train', },
   'common.action.mining': {cn: '挖掘', en: 'Mine', },
   'common.action.fusion': {cn: '预处理', en: 'Pretreat', },
-  'common.action.merge': {cn: '合并', en: 'Merge', },
+  'common.action.merge': {cn: '添加', en: 'Add', },
   'common.action.filter': {cn: '筛选', en: 'Filter', },
   'common.action.label': {cn: '标注', en: 'Label', },
   'common.action.inference': {cn: '推理', en: 'Infer', },
@@ -72,6 +72,10 @@ const common = {
   'common.action.multiple.hide': {cn: '批量隐藏', en: 'Batch Hide', },
   'common.action.multiple.restore': {cn: '批量显示', en: 'Batch Show', },
   'common.action.multiple.infer': {cn: '批量推理', en: 'Batch Inference', },
+  'common.action.multiple.merge': {cn: '批量合并', en: 'Batch Merge', },
+  'common.action.rerun.train': {cn: '再次训练', en: 'ReTrain', },
+  'common.action.rerun.mining': {cn: '再次挖掘', en: 'ReMine', },
+  'common.action.rerun.inference': {cn: '再次推理', en: 'ReInfer', },
   'common.action.restore': {cn: '显示', en: 'Show', },
   'common.action.diagnose.training': {cn: '训练过程诊断', en: 'Training Diagnose', },
   'common.hidden.label': {cn: '显示状态', en: 'Visible Status', },
@@ -82,6 +86,7 @@ const common = {
   'common.recommend': {cn: '推荐', en: 'Recommend', },
   "common.desc": { en: "Description", cn: "描述", },
   "common.reset": { en: "Reset", cn: "重置", },
+  "common.menu.docs": { en: "Documents", cn: "说明文档", },
 }
 
 export default common

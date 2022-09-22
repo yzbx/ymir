@@ -64,14 +64,14 @@ func (m *MockMongoServer) QueryDatasetAssets(
 	mirRepo *constants.MirRepo,
 	offset int,
 	limit int,
-	classIds []int,
+	classIDs []int,
 	annoTypes []string,
 	currentAssetID string,
 	cmTypes []int,
 	cks []string,
 	tags []string,
 ) *constants.QueryAssetsResult {
-	args := m.Called(mirRepo, offset, limit, classIds, annoTypes, currentAssetID, cmTypes, cks, tags)
+	args := m.Called(mirRepo, offset, limit, classIDs, annoTypes, currentAssetID, cmTypes, cks, tags)
 	return args.Get(0).(*constants.QueryAssetsResult)
 }
 
@@ -83,6 +83,23 @@ func (m *MockMongoServer) QueryDatasetStats(
 ) *constants.QueryDatasetStatsResult {
 	args := m.Called(mirRepo, classIDs)
 	return args.Get(0).(*constants.QueryDatasetStatsResult)
+}
+
+func (m *MockMongoServer) MetricsRecordSignals(collectionSuffix string, id string, data interface{}) {
+	m.Called(collectionSuffix, id, data)
+}
+
+func (m *MockMongoServer) MetricsQuerySignals(
+	collectionSuffix string,
+	userID string,
+	classIDs []int,
+	queryField string,
+	bucket string,
+	unit string,
+	limit int,
+) *[]constants.MetricsQueryPoint {
+	args := m.Called(collectionSuffix, userID, queryField, bucket, unit, limit)
+	return args.Get(0).(*[]constants.MetricsQueryPoint)
 }
 
 func TestGetDatasetMetaCountsHandler(t *testing.T) {
@@ -106,6 +123,7 @@ func TestGetDatasetMetaCountsHandler(t *testing.T) {
 		{
 			"positive_asset_cnt": 8,
 			"negative_asset_cnt": 5,
+			"eval_class_ids": [0, 1],
 			"class_ids_cnt":
 			{
 				"1": 8
@@ -172,6 +190,7 @@ func TestGetDatasetMetaCountsHandler(t *testing.T) {
 			"negative_assets_count": 5,
 			"annos_hist": {},
 			"positive_assets_count": 8,
+			"eval_class_ids": [0, 1],
 			"tags_count_total":
 			{
 				"city": 1

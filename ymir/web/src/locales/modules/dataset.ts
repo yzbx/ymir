@@ -65,7 +65,8 @@ const dataset = {
   "dataset.add.types.path": { cn: "路径导入", en: "Path Import", },
   "dataset.add.success.msg": { cn: "导入正在进行中", en: "Dataset Importing", },
   "dataset.add.form.name.label": { cn: "数据集名称", en: "Dataset Name", },
-  "dataset.add.form.name.required": { cn: "请输入数据集名称", en: "Dataset Name", },
+  "dataset.add.form.name.required": { cn: "数据集名称为必填项", en: "Dataset Name Required", },
+  "dataset.add.form.name.placeholder": { cn: "请输入数据集名称，支持2-80个字符", en: "Please input dataset name, 2 - 80 characters", },
   "dataset.add.form.type.label": { cn: "添加类型", en: "Type", },
   "dataset.add.form.label.label": { cn: "标注", en: "Labeling Status", },
   "dataset.add.form.newkw.label": { cn: " ", en: " ", },
@@ -86,8 +87,9 @@ const dataset = {
   "dataset.add.form.net.label": { cn: "URL地址", en: "URL", },
   "dataset.add.form.net.placeholder": { cn: "请输入压缩文件的url地址", en: "Please input a url of zip file", },
   "dataset.add.form.path.label": { cn: "相对路径", en: "Relative Path", },
+  "dataset.add.form.tip.format.detail": { cn: "查看标注格式(.xml)及meta.yaml格式", en: "View more about annotation format or meta.yaml", },
   "dataset.add.form.tip.structure": {
-    cn: "压缩包文件内图片文件需放入images文件夹内，标准值标注文件需放入gt文件夹内，模型推理标注文件需放入pred文件夹内。gt和pred都是可选的。压缩包内文件结构如下：{br}{pic}",
+    cn: "压缩包文件内图片文件需放入images文件夹内，标准值标注文件需放入gt文件夹内，模型推理标注文件需放入pred文件夹内。gt和pred都是可选的。压缩包内文件结构如下：{br}{pic}{br}{detail}",
     en: "image -> images; gt -> ground truth annotations; pred -> predictions. gt and pred is optional. zip structure: {br}{pic}"
   },
   "dataset.add.form.path.tip": {
@@ -146,8 +148,8 @@ const dataset = {
   "dataset.analysis.column.version": { cn: "版本", en: "Version", },
   "dataset.analysis.column.size": { cn: "数据集大小", en: "Dataset Size", },
   "dataset.analysis.column.box_count": { cn: "标注框总数", en: "Annotations Count", },
-  "dataset.analysis.column.average_labels": { cn: "标注框总数/总图片数", en: "Total Annotations/Total Assets", },
-  "dataset.analysis.column.overall": { cn: "已标注图片数/总图片数", en: "Labelled Assets/Total Assets", },
+  "dataset.analysis.column.average_labels": { cn: "图片平均标注框数", en: "Average Annotations Per Asset", },
+  "dataset.analysis.column.overall": { cn: "已标注图片占比", en: "Labelled Assets Rate", },
   "dataset.analysis.param.title": { cn: "选择", en: "Select", },
   "dataset.analysis.btn.start": { cn: "开始分析", en: "Analysis", },
   "dataset.analysis.btn.retry": { cn: "重新分析", en: "Retry", },
@@ -168,6 +170,7 @@ const dataset = {
   'dataset.assets.keyword.selector.types.placeholder': { en: 'Please select filter keywords', cn: '请选择筛选标签，可多选' },
   'dataset.assets.selector.gt.label': { en: 'Annotation Type:', cn: '标注类型：' },
   'dataset.assets.selector.evaluation.label': { en: 'Evaluation:', cn: '预测：' },
+  'dataset.detail.infer.class': { en: 'Prediction Target:', cn: '模型预测目标：' },
 
 }
 

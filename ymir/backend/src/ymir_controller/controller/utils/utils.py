@@ -12,6 +12,7 @@ from controller.label_model.label_free import LabelFree
 from controller.label_model.label_studio import LabelStudio
 from id_definition import task_id as task_id_proto
 from id_definition.error_codes import CTLResponseCode
+from mir.protos import mir_command_pb2 as mir_cmd_pb
 from proto import backend_pb2
 
 
@@ -67,12 +68,12 @@ def sub_task_id(task_id: str, offset: int) -> str:
     return task_id[0] + str(offset) + task_id[2:]
 
 
-def annotation_format_str(format: backend_pb2.LabelFormat) -> str:
+def annotation_format_str(format: mir_cmd_pb.AnnoFormat) -> str:
     format_enum_dict = {
-        backend_pb2.LabelFormat.NO_ANNOTATION: 'none',
-        backend_pb2.LabelFormat.PASCAL_VOC: 'voc',
-        backend_pb2.LabelFormat.IF_ARK: 'ark',
-        backend_pb2.LabelFormat.LABEL_STUDIO_JSON: 'ls_json',
+        mir_cmd_pb.AnnoFormat.AF_NO_ANNOTATION: 'none',
+        mir_cmd_pb.AnnoFormat.AF_DET_PASCAL_VOC: 'det-voc',
+        mir_cmd_pb.AnnoFormat.AF_DET_ARK_JSON: 'det-ark',
+        mir_cmd_pb.AnnoFormat.AF_DET_LS_JSON: 'det-ls-json',
     }
     return format_enum_dict[format]
 
