@@ -80,21 +80,6 @@ services:
     networks:
       - ymirnetwork_test
 
-<<<<<<< HEAD
-  viz-redis:
-    image: industryessentials/ymir-viz-redis
-    restart: on-failure:10
-    healthcheck:
-      test: ["CMD", "redis-cli","ping"]
-      interval: 60s
-      timeout: 6s
-      retries: 3
-      start_period: 30s
-    networks:
-      - ymirnetwork_test
-
-=======
->>>>>>> dev
   web:
     image: industryessentials/ymir-web:1.2.2
     volumes:
