@@ -5,8 +5,8 @@ set -e
 EXECUTOR_TRAINING='industryessentials/executor-det-yolov4-training'
 EXECUTOR_MINING='industryessentials/executor-det-yolov4-mining'
 
-DOCKER_BACKEND='industryessentials/ymir-backend'
-DOCKER_WEB='industryessentials/ymir-web'
+DOCKER_BACKEND="industryessentials/ymir-backend:ymir1.3.0"
+DOCKER_WEB="industryessentials/ymir-web:ymir1.3.0"
 
 DEV_SOURCE_BACKEND_PIP='https://pypi.mirrors.ustc.edu.cn/simple'
 DEV_SOURCE_WEB_NPM='https://registry.npmmirror.com'
@@ -133,10 +133,10 @@ fi
 
 start() {
 check_permission
-pre_start
+# pre_start
 
-set_fiftyone
-start_label_tool
+# set_fiftyone
+# start_label_tool
 
 if [[ $1 == 'dev' ]]; then
     printf '\nin dev mode, building images.\n'
@@ -153,7 +153,7 @@ else
     printf '\nin prod mode, starting service.\n'
 fi
 
-docker-compose -f docker-compose.fiftyone.yml up -d
+# docker-compose -f docker-compose.fiftyone.yml up -d
 
 docker-compose up -d
 }
