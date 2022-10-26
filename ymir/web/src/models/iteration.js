@@ -22,6 +22,7 @@ export default {
     iteration: {},
     currentStageResult: {},
     prepareStagesResult: {},
+    actionPanelExpand: true,
   },
   effects: {
     *getIterations({ payload }, { call, put }) {
@@ -30,7 +31,7 @@ export default {
       if (code === 0) {
         let iterations = result.map((iteration) => transferIteration(iteration))
         if (more && iterations.length) {
-          iterations = yield put.resolve({
+          yield put.resolve({
             type: 'moreIterationsInfo',
             payload: { iterations, id },
           })
@@ -115,38 +116,31 @@ export default {
       }
     },
     *getPrepareStagesResult({ payload }, { put }) {
-      const { id } = payload
+
       const project = yield put.resolve({
         type: 'project/getProject',
         payload,
       })
-      const results = {
-        testSet: project.testSet,
-        miningSet: project.miningSet,
-      }
 
       if (project.candidateTrainSet) {
-        const candidateTrainSet = yield put.resolve({
+        yield put.resolve({
           type: 'dataset/getDataset',
           payload: { id: project.candidateTrainSet, }
         })
-        results.candidateTrainSet = candidateTrainSet
       }
 
+      yield put.resolve({
+        type: 'dataset/updateLocalDatasets',
+        payload: [project.testSet, project.miningSet],
+      })
+
       if (project.model) {
-        const model = yield put.resolve({
+        yield put.resolve({
           type: 'model/getModel',
           payload: { id: project.model, }
         })
-        results.modelStage = model
       }
-
-      yield put({
-        type: 'UPDATE_PREPARE_STAGES_RESULT',
-        payload: { pid: id, results },
-      })
-
-      return results
+      return true
     },
     *setCurrentStageResult({ payload }, { call, put }) {
       const result = payload
@@ -164,7 +158,7 @@ export default {
           type: 'updateLocalIterations',
           payload: [iteration],
         })
-        const iterations = yield select(( {iteration }) => iteration.iterations[projectId])
+        const iterations = yield select(({ iteration }) => iteration.iterations[projectId])
         yield put({
           type: 'UPDATE_ITERATIONS',
           payload: { id: projectId, iterations: [...iterations, iteration] },
@@ -181,7 +175,7 @@ export default {
           type: 'updateLocalIterations',
           payload: [{ ...iteration, needReload: true }],
         })
-        const iterations = yield select(( {iteration: it }) => it.iterations[iteration.projectId])
+        const iterations = yield select(({ iteration: it }) => it.iterations[iteration.projectId])
         yield put({
           type: 'UPDATE_ITERATIONS',
           payload: { id: iteration.projectId, iterations: iterations.map(it => it.id === iteration.id ? iteration : it) },
@@ -208,23 +202,6 @@ export default {
         })
       }
     },
-    *updatePrepareStagesResult({ payload }, { put, select }) {
-      const { id } = yield select(({ project }) => project.current)
-      const results = yield select(({ iteration }) => iteration.prepareStagesResult[id])
-      const tasks = payload || {}
-      const updatedResults = Object.keys(results || {}).reduce((prev, key) => {
-        const result = results[key]
-        const updated = result ? updateResultState(result, tasks) : undefined
-        return { ...prev, [key]: updated }
-      }, {})
-
-      if (updatedResults) {
-        yield put({
-          type: 'UPDATE_PREPARE_STAGES_RESULT',
-          payload: { pid: id, results: updatedResults },
-        })
-      }
-    },
     *updateIterationCache({ payload: tasks = {} }, { put, select }) {
       // const tasks = payload || {}
       const iteration = yield select(state => state.iteration.iteration)
@@ -241,6 +218,12 @@ export default {
       yield put({
         type: 'UPDATE_ITERATION',
         payload: updateItertion,
+      })
+    },
+    *toggleActionPanel({ payload }, { call, put, select }) {
+      yield put.resolve({
+        type: 'UPDATE_ACTIONPANELEXPAND',
+        payload,
       })
     },
   },
@@ -281,5 +264,11 @@ export default {
         },
       }
     },
+    UPDATE_ACTIONPANELEXPAND(state, { payload }) {
+      return {
+        ...state,
+        actionPanelExpand: payload,
+      }
+    }
   },
 }

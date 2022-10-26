@@ -1,32 +1,32 @@
 import React, { useEffect, useState } from "react"
 import { Table, Popover, } from "antd"
+import { useSelector } from 'umi'
 
 import t from "@/utils/t"
 import { percent, isNumber } from '@/utils/number'
 import useFetch from '@/hooks/useFetch'
 import { validModel } from '@/constants/model'
+import { validDataset } from '@/constants/dataset'
 
 import SampleRates from "@/components/dataset/sampleRates"
 import MiningSampleRates from "@/components/dataset/miningSampleRates"
 
 import s from "./index.less"
-
-function RatesHOC(Rates) {
-  function RatesRender(props) {
-    return <Rates {...props} />
-  }
-  return RatesRender
-}
+import StateTag from "@/components/task/stateTag"
 
 function List({ project }) {
   const [iterations, getIterations] = useFetch('iteration/getIterations', [])
   const [list, setList] = useState([])
+  const datasets = useSelector(({ dataset }) => dataset.dataset)
+  const models = useSelector(({ model }) => model.model)
 
   useEffect(() => {
     project?.id && getIterations({ id: project.id, more: true })
   }, [project])
 
-  useEffect(() => iterations.length && setList(fetchHandle(iterations)), [iterations])
+  useEffect(() => {
+    setList(iterations.length ? fetchHandle(iterations) : [])
+  }, [iterations, datasets, models])
 
   const columns = [
     {
@@ -37,33 +37,33 @@ function List({ project }) {
     {
       title: showTitle("iteration.column.premining"),
       dataIndex: "miningDatasetLabel",
-      render: (label, { id, versionName, entities }) => renderPop(label, entities?.miningSet, <MiningSampleRates iid={id} />),
+      render: (label, { id, versionName, miningSet }) => renderPop(label, datasets[miningSet], <MiningSampleRates iid={id} />),
       ellipsis: true,
     },
     {
       title: showTitle("iteration.column.mining"),
       dataIndex: "miningResultDatasetLabel",
-      render: (label, { entities }) => renderPop(label, entities?.miningResult),
+      render: (label, { miningResult }) => renderPop(label, datasets[miningResult]),
       ellipsis: true,
     },
     {
       title: showTitle("iteration.column.label"),
       dataIndex: "labelDatasetLabel",
-      render: (label, { entities }) => renderPop(label, entities?.labelSet),
+      render: (label, { labelSet }) => renderPop(label, datasets[labelSet]),
       align: 'center',
       ellipsis: true,
     },
     {
       title: showTitle("iteration.column.test"),
       dataIndex: "testDatasetLabel",
-      render: (label, { entities }) => renderPop(label, entities?.testSet),
+      render: (label, { testSet }) => renderPop(label, datasets[testSet]),
       align: 'center',
       ellipsis: true,
     },
     {
       title: showTitle("iteration.column.merging"),
       dataIndex: "trainUpdateDatasetLabel",
-      render: (label, { trainEffect, entities }) => renderPop(label, entities?.trainUpdateSet,
+      render: (label, { trainEffect, trainUpdateSet }) => renderPop(label, datasets[trainUpdateSet],
         null, <span className={s.extraTag}>{renderExtra(trainEffect)}</span>),
       align: 'center',
       ellipsis: true,
@@ -71,13 +71,17 @@ function List({ project }) {
     {
       title: showTitle("iteration.column.training"),
       dataIndex: 'map',
-      render: (map, { entities, mapEffect }) => validModel(entities?.model || {}) ? <div className={s.td}>
-        <span style={{ display: 'inline-block', width: '70%', overflow: 'hidden', textOverflow: 'ellipsis'}}>
-          {entities?.model?.name}
-        </span>
-        <span>{map >= 0 ? percent(map) : null}</span>
-        <span className={s.extraTag}>{renderExtra(mapEffect, true)}</span>
-      </div> : null,
+      render: (map, { model, mapEffect }) => {
+        const md = models[model] || {}
+        const label = <>{md.name} {md.versionName} {!validModel(md) ? <StateTag mode='text' state={md.state} /> : null}</>
+        return validModel(md) ? <div className={s.td}>
+          <span style={{ display: 'inline-block', width: '70%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {label}
+          </span>
+          <span>{map >= 0 ? percent(map) : null}</span>
+          <span className={s.extraTag}>{renderExtra(mapEffect, true)}</span>
+        </div> : null
+      },
       align: 'center',
     },
   ]
@@ -106,33 +110,32 @@ function List({ project }) {
         labelSet,
         testSet,
         model,
-      } = iteration.entities
+      } = iteration
       return {
         ...iteration,
-        trainUpdateDatasetLabel: renderDatasetLabel(trainUpdateSet),
-        miningDatasetLabel: renderDatasetLabel(miningSet),
-        miningResultDatasetLabel: renderDatasetLabel(miningResult),
-        labelDatasetLabel: renderDatasetLabel(labelSet),
-        testDatasetLabel: renderDatasetLabel(testSet),
-        map: model?.map,
+        index: `${iteration.id}${new Date().getTime()}`,
+        trainUpdateDatasetLabel: renderDatasetLabel(datasets[trainUpdateSet]),
+        miningDatasetLabel: renderDatasetLabel(datasets[miningSet]),
+        miningResultDatasetLabel: renderDatasetLabel(datasets[miningResult]),
+        labelDatasetLabel: renderDatasetLabel(datasets[labelSet]),
+        testDatasetLabel: renderDatasetLabel(datasets[testSet]),
+        map: models[model]?.map,
       }
     })
     iters.reduce((prev, current) => {
       const prevMap = prev.map || 0
       const currentMap = current.map || 0
-      const prevEntities = prev?.entities || {}
-      const currentEntities = current?.entities || {}
-      const validModels = prevEntities.model && currentEntities.model
+      const validModels = prev.model && current.model
       current.mapEffect = validModels ? (currentMap - prevMap) : null
 
-      const validTrainSet = prevEntities.trainUpdateSet && currentEntities.trainUpdateSet
-      const prevUpdatedTrainSetCount = prevEntities.trainUpdateSet?.assetCount || 0
-      const currentUpdatedTrainSetCount = currentEntities.trainUpdateSet?.assetCount || 0
+      const validTrainSet = prev.trainUpdateSet && current.trainUpdateSet
+      const prevUpdatedTrainSetCount = datasets[prev.trainUpdateSet]?.assetCount || 0
+      const currentUpdatedTrainSetCount = datasets[current.trainUpdateSet]?.assetCount || 0
       current.trainEffect = validTrainSet ? (currentUpdatedTrainSetCount - prevUpdatedTrainSetCount) : null
 
       return current
     }, {})
-    return iters
+    return iters.reverse()
   }
 
   function renderDatasetLabel(dataset) {
@@ -140,7 +143,10 @@ function List({ project }) {
       return
     }
     const label = `${dataset.name} ${dataset.versionName} (${dataset.assetCount})`
-    return <span title={label}>{label}</span>
+    return <span title={label}>
+      {label}
+      {!validDataset(dataset) ? <StateTag mode='text' state={dataset.state} /> : null}
+    </span>
   }
 
   function showTitle(str) {
@@ -152,7 +158,7 @@ function List({ project }) {
       <Table
         dataSource={list}
         pagination={false}
-        rowKey={(record) => record.id}
+        rowKey={(record) => record.index}
         columns={columns}
       ></Table>
     </div>

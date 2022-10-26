@@ -24,7 +24,7 @@ const task = {
   "task.action.training": { cn: "训练过程", en: "Training Process", },
   "task.action.training.batch": { cn: "多模型训练过程", en: "Models Training Process", },
   "task.action.terminate.confirm.content": { cn: "确认要终止：{name}？", en: "Are you sure to terminate: {name}?", },
-  "task.detail.label.train_goal": { cn: "训练目标", en: "Train Classes", },
+  "task.detail.label.train_goal": { cn: "训练目标", en: "Target", },
   "task.detail.label.framework": { cn: "算法框架", en: "Network", },
   "task.detail.label.create_time": { cn: "创建时间", en: "Created", },
   "task.detail.label.premodel": { cn: "预训练模型", en: "Pre-Training Model", },
@@ -46,7 +46,7 @@ const task = {
   "task.fusion.form.sampling": { cn: "采样数量", en: "Samples", },
   "task.train.form.trainsets.label": { cn: "训练集", en: "Train Sets", },
   "task.train.form.testsets.label": { cn: "验证集", en: "Validation Sets", },
-  "task.train.form.keywords.label": { cn: "训练目标", en: "Train Classes", },
+  "task.train.form.keywords.label": { cn: "训练目标", en: "Target", },
   "task.train.form.traintype.label": { cn: "训练类型", en: "Train Type", },
   "task.train.form.network.label": { cn: "算法框架", en: "Network", },
   "task.train.form.backbone.label": { cn: "骨干网络结构", en: "Backbone", },
@@ -131,6 +131,10 @@ const task = {
   "task.fusion.form.merge.include.label": { cn: '合并数据集', en: 'Merge Datasets', },
   "task.fusion.form.merge.exclude.label": { cn: '排除数据集', en: 'Exclude Datasets', },
   "task.train.form.training.datasets.placeholder": { cn: "请选择数据集", en: "Please select a dataset", },
+  "task.fusion.form.includes.label": { cn: '添加挖掘数据', en: 'Merge Mining Datasets', },
+  "task.fusion.form.excludes.label": { cn: '排除挖掘数据', en: 'Exclude Mining Datasets', },
+  "task.fusion.form.class.include.label": { cn: "选择数据类别", en: "Select Classes", },
+  "task.fusion.form.class.exclude.label": { cn: "排除数据类别", en: "Exclude Classes", },
   "task.train.form.testset.required": { cn: "验证集为必选项", en: "Validation dataset is required", },
   "task.train.form.trainset.required": { cn: "训练集为必选项", en: "Training dataset is required", },
   "task.train.form.miningset.required": { cn: "挖掘集为必选项", en: "Mining dataset is required", },
@@ -201,6 +205,7 @@ const task = {
   'task.merge.type.new': { en: 'Generate a new dataset', cn: '生成新数据集' },
   'task.merge.type.exist': { en: 'Generate a version for original dataset', cn: '在原数据集上生成新版本' },
   'task.train.btn.calc.negative': { en: 'Calculate Positive/Negative Samples', cn: '计算正负样本' },
+  'task.panel.settings.advanced': { en: 'Advanced Settings', cn: '高级设置' },
 }
 
 export default task

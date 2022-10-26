@@ -18,14 +18,14 @@ import ImageSelect from "@/components/form/imageSelect"
 import DatasetSelect from "@/components/form/datasetSelect"
 import useAddKeywords from "@/hooks/useAddKeywords"
 import AddKeywordsBtn from "@/components/keyword/addKeywordsBtn"
-import LiveCodeForm from "../components/liveCodeForm"
-import { removeLiveCodeConfig } from "../components/liveCodeConfig"
-import DockerConfigForm from "../components/dockerConfigForm"
+import LiveCodeForm from "@/components/form/items/liveCode"
+import { removeLiveCodeConfig } from "@/components/form/items/liveCodeConfig"
+import DockerConfigForm from "@/components/form/items/dockerConfig"
 import Desc from "@/components/form/desc"
 
 import commonStyles from "../common.less"
 import styles from "./index.less"
-import OpenpaiForm from "../components/openpaiForm"
+import OpenpaiForm from "@/components/form/items/openpai"
 import Tip from "@/components/form/tip"
 
 const { Option } = Select
@@ -46,12 +46,12 @@ function Inference({ datasetCache, datasets, ...func }) {
   const stage = parseModelStage(location.query.mid)
   const [selectedModels, setSelectedModels] = useState([])
   const [form] = Form.useForm()
-  const [seniorConfig, setSeniorConfig] = useState([])
+  const [seniorConfig, setSeniorConfig] = useState({})
   const [gpu_count, setGPU] = useState(0)
   const [taskCount, setTaskCount] = useState(1)
   const [selectedGpu, setSelectedGpu] = useState(0)
   const [keywordRepeatTip, setKRTip] = useState('')
-  const [{ newer }, checkKeywords] = useAddKeywords(true)
+  const [{ newer }, checkKeywords] = useFetch('keyword/checkDuplication', { newer: [] })
   const [live, setLiveCode] = useState(false)
   const [project, getProject] = useFetch('project/getProject', {})
   const watchStages = Form.useWatch('stages', form)
@@ -79,10 +79,6 @@ function Inference({ datasetCache, datasets, ...func }) {
   useEffect(() => {
     pid && getProject({ id: pid, force: true })
   }, [pid])
-
-  useEffect(() => {
-    form.setFieldsValue({ hyperparam: seniorConfig })
-  }, [seniorConfig])
 
   useEffect(() => {
     const did = location.query?.did ? getArray(location.query.did).map(Number) : undefined
@@ -167,9 +163,8 @@ function Inference({ datasetCache, datasets, ...func }) {
     setConfig(removeLiveCodeConfig(configObj.config))
   }
 
-  function setConfig(config) {
-    const params = Object.keys(config).filter(key => key !== 'gpu_count').map(key => ({ key, value: config[key] }))
-    setSeniorConfig(params)
+  function setConfig(config = {}) {
+    setSeniorConfig(config)
   }
 
   const onFinish = async (values) => {
@@ -203,6 +198,7 @@ function Inference({ datasetCache, datasets, ...func }) {
       }
       await func.clearCache()
       const groups = result.map(item => item.result_dataset?.dataset_group_id || '')
+      console.log('groups:', groups, resultCount, taskCount, result)
       history.replace(`/home/project/${pid}/dataset#${groups.join(',')}`)
     }
   }
@@ -272,7 +268,6 @@ function Inference({ datasetCache, datasets, ...func }) {
                 pid={pid}
                 filters={testSetFilters}
                 renderLabel={renderLabel}
-                // onChange={(value) => console.log('value: ', value)}
                 placeholder={t('task.inference.form.dataset.placeholder')}
               />
             </Form.Item>

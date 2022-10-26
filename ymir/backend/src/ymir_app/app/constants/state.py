@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import IntEnum
 
 from common_utils.percent_log_util import LogState
@@ -33,7 +34,6 @@ class TaskType(IntEnum):
     copy_model = mir_cmd_pb.TaskType.TaskTypeCopyModel
     import_model = mir_cmd_pb.TaskType.TaskTypeImportModel
     dataset_infer = mir_cmd_pb.TaskType.TaskTypeDatasetInfer
-    visualization = mir_cmd_pb.TaskType.TaskTypeVisualization
 
     # fixme
     #  create_project is not the type of TASK_CREATE, but empty dataset need a task
@@ -85,5 +85,18 @@ class AnnotationType(IntEnum):
     pred = 2
 
 
+@dataclass(frozen=True)
+class IterationStepTemplate:
+    name: str
+    task_type: TaskType
+
+
 RunningStates = [TaskState.pending, TaskState.running]
 FinalStates = [TaskState.done, TaskState.error, TaskState.terminate]
+IterationStepTemplates = [
+    IterationStepTemplate("prepare_mining", TaskType.data_fusion),
+    IterationStepTemplate("mining", TaskType.mining),
+    IterationStepTemplate("label", TaskType.label),
+    IterationStepTemplate("prepare_training", TaskType.data_fusion),
+    IterationStepTemplate("training", TaskType.training),
+]

@@ -321,11 +321,6 @@ class InvalidProject(APIError):
     message = "Invalid Project"
 
 
-class VisualizationNotFound(NotFound):
-    code = error_codes.VISUALIZATION_NOT_FOUND
-    message = "Visualization Not Found"
-
-
 class DuplicateProjectError(DuplicateError):
     code = error_codes.PROJECT_DUPLICATED_NAME
     message = "Duplicated Project Name"
@@ -379,6 +374,16 @@ class IterationNotFound(NotFound):
 class FailedToUpdateIterationStage(APIError):
     code = error_codes.ITERATION_COULD_NOT_UPDATE_STAGE
     message = "Failed to Update Iteration Stage"
+
+
+class IterationStepNotFound(NotFound):
+    code = error_codes.ITERATION_STEP_NOT_FOUND
+    message = "IterationStep Not Found"
+
+
+class IterationStepHasFinished(APIError):
+    code = error_codes.ITERATION_STEP_ALREADY_FINISHED
+    message = "IterationStep Has Finished"
 
 
 class RefuseToProcessMixedOperations(APIError):

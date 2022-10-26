@@ -87,7 +87,6 @@ class _TaskTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumT
     TaskTypeCopyModel = TaskType.V(14)
     TaskTypeDatasetInfer = TaskType.V(15)
     TaskTypeEvaluate = TaskType.V(16)
-    TaskTypeVisualization = TaskType.V(17)
 
 TaskTypeUnknown = TaskType.V(0)
 TaskTypeTraining = TaskType.V(1)
@@ -108,7 +107,6 @@ TaskTypeImportModel = TaskType.V(13)
 TaskTypeCopyModel = TaskType.V(14)
 TaskTypeDatasetInfer = TaskType.V(15)
 TaskTypeEvaluate = TaskType.V(16)
-TaskTypeVisualization = TaskType.V(17)
 global___TaskType = TaskType
 
 
@@ -1399,3 +1397,59 @@ class AnnoStats(google.protobuf.message.Message):
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["class_ids_cnt",b"class_ids_cnt","eval_class_ids",b"eval_class_ids","negative_asset_cnt",b"negative_asset_cnt","positive_asset_cnt",b"positive_asset_cnt","tags_cnt",b"tags_cnt","total_cnt",b"total_cnt"]) -> None: ...
 global___AnnoStats = AnnoStats
+
+class ExportConfig(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
+    ASSET_FORMAT_FIELD_NUMBER: builtins.int
+    ASSET_DIR_FIELD_NUMBER: builtins.int
+    ASSET_INDEX_FILE_FIELD_NUMBER: builtins.int
+    ASSET_INDEX_PREFIX_FIELD_NUMBER: builtins.int
+    MEDIA_LOCATION_FIELD_NUMBER: builtins.int
+    NEED_SUB_FOLDER_FIELD_NUMBER: builtins.int
+    ANNO_FORMAT_FIELD_NUMBER: builtins.int
+    GT_DIR_FIELD_NUMBER: builtins.int
+    GT_INDEX_FILE_FIELD_NUMBER: builtins.int
+    GT_INDEX_PREFIX_FIELD_NUMBER: builtins.int
+    PRED_DIR_FIELD_NUMBER: builtins.int
+    PRED_INDEX_FILE_FIELD_NUMBER: builtins.int
+    PRED_INDEX_PREFIX_FIELD_NUMBER: builtins.int
+    TVT_INDEX_DIR_FIELD_NUMBER: builtins.int
+    asset_format: global___AssetFormat.V = ...
+    """Asset config."""
+
+    asset_dir: typing.Text = ...
+    asset_index_file: typing.Text = ...
+    asset_index_prefix: typing.Text = ...
+    """Index file writes abs path. In TMI case, path should be converted, e.g. /in/assets."""
+
+    media_location: typing.Text = ...
+    need_sub_folder: builtins.bool = ...
+    anno_format: global___AnnoFormat.V = ...
+    """Annotation config."""
+
+    gt_dir: typing.Text = ...
+    gt_index_file: typing.Text = ...
+    gt_index_prefix: typing.Text = ...
+    pred_dir: typing.Text = ...
+    pred_index_file: typing.Text = ...
+    pred_index_prefix: typing.Text = ...
+    tvt_index_dir: typing.Text = ...
+    def __init__(self,
+        *,
+        asset_format : global___AssetFormat.V = ...,
+        asset_dir : typing.Text = ...,
+        asset_index_file : typing.Text = ...,
+        asset_index_prefix : typing.Text = ...,
+        media_location : typing.Text = ...,
+        need_sub_folder : builtins.bool = ...,
+        anno_format : global___AnnoFormat.V = ...,
+        gt_dir : typing.Text = ...,
+        gt_index_file : typing.Text = ...,
+        gt_index_prefix : typing.Text = ...,
+        pred_dir : typing.Text = ...,
+        pred_index_file : typing.Text = ...,
+        pred_index_prefix : typing.Text = ...,
+        tvt_index_dir : typing.Text = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["anno_format",b"anno_format","asset_dir",b"asset_dir","asset_format",b"asset_format","asset_index_file",b"asset_index_file","asset_index_prefix",b"asset_index_prefix","gt_dir",b"gt_dir","gt_index_file",b"gt_index_file","gt_index_prefix",b"gt_index_prefix","media_location",b"media_location","need_sub_folder",b"need_sub_folder","pred_dir",b"pred_dir","pred_index_file",b"pred_index_file","pred_index_prefix",b"pred_index_prefix","tvt_index_dir",b"tvt_index_dir"]) -> None: ...
+global___ExportConfig = ExportConfig

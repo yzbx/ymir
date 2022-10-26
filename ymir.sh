@@ -20,9 +20,11 @@ FIELD_LABEL_TOOL_LS='label_studio'
 FIELD_LABEL_TOOL_LF='label_free'
 ENV_FILE='.env'
 
+FIELD_DEPLOY_MODULE_HOST_PORT='DEPLOY_MODULE_HOST_PORT'
+
 stop() {
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.label_studio.yml \
--f docker-compose.labelfree.yml -f docker-compose.fiftyone.yml down
+-f docker-compose.labelfree.yml -f docker-compose.modeldeploy.yml down
 }
 
 pre_start() {
@@ -124,19 +126,28 @@ else
 fi
 }
 
-set_fiftyone() {
-if ! cat ${ENV_FILE} | grep -oE "${FIELD_FIFTYONE_HOST_IP}=http://\b([0-9]{1,3}\.){3}[0-9]{1,3}\b"; then
-    echo "fiftyone's IP is not set, expected format: http://xxx.xxx.xxx.xxx"
-    exit
-fi
+start_deploy_module() {
+    if cat ${ENV_FILE} | grep -oE "^${FIELD_DEPLOY_MODULE_HOST_PORT}=$"; then
+        echo "DEPLOY_MODULE_HOST_PORT not set, skip deploy module startup"
+        return
+    fi
+
+    if ! cat ${ENV_FILE} | grep -oE "^${FIELD_DEPLOY_MODULE_HOST_PORT}=[0-9]{1,5}$"; then
+        echo "DEPLOY_MODULE_HOST_PORT is invalid"
+        exit
+    fi
+
+    echo "deploy module, starting..."
+    docker-compose -f docker-compose.modeldeploy.yml up -d
 }
 
 start() {
 check_permission
 # pre_start
 
-# set_fiftyone
-# start_label_tool
+start_label_tool
+
+start_deploy_module
 
 if [[ $1 == 'dev' ]]; then
     printf '\nin dev mode, building images.\n'
@@ -153,8 +164,6 @@ else
     printf '\nin prod mode, starting service.\n'
 fi
 
-# docker-compose -f docker-compose.fiftyone.yml up -d
-
 docker-compose up -d
 }
 
@@ -163,7 +172,7 @@ update() {
 
 cat <<- EOF
 Before proceed, make sure to BACKUP your YMIR-workplace folder.
-Only supports to upgrade from 1.1.0 (22-May) to 1.3.0 (22-Oct), otherwise may cause data damage.
+Only supports to upgrade from 1.1.0 (22-May) to 2.0.0 (22-Oct), otherwise may cause data damage.
 EOF
 
 while true; do

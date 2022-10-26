@@ -43,8 +43,8 @@ function SampleRates({ keywords, dataset, negative, label, progressWidth = 0.5 }
     }
   }, [did, keywords])
 
-  function fetchKeywords(projectId, keywords, dataset) {
-    getNegativeKeywords({ projectId, keywords, dataset })
+  function fetchKeywords(projectId, keywords = [], dataset) {
+    keywords.length && getNegativeKeywords({ projectId, keywords, dataset })
   }
 
   return <div>
