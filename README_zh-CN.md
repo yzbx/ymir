@@ -34,19 +34,21 @@
 [📘使用说明](https://github.com/IndustryEssentials/ymir/blob/master/README_zh-CN.md#3-gui%E4%BD%BF%E7%94%A8-%E5%85%B8%E5%9E%8B%E6%A8%A1%E5%9E%8B%E7%94%9F%E4%BA%A7%E6%B5%81%E7%A8%8B) |
 [🛠️安装教程](https://github.com/IndustryEssentials/ymir/blob/master/README_zh-CN.md#2-%E5%AE%89%E8%A3%85) |
 [👀推荐配置](https://c1n.cn/obvHf) |
-[🚀进行中的项目](https://github.com/IndustryEssentials/ymir/projects) | 
-[🤔报告问题](https://github.com/IndustryEssentials/ymir/issues/new/choose) | 
+[🚀进行中的项目](https://github.com/IndustryEssentials/ymir/projects) |
+[🤔报告问题](https://github.com/IndustryEssentials/ymir/issues/new/choose) |
 [📰开源协议](https://github.com/IndustryEssentials/ymir/blob/master/LICENSE)
-  
+
 </div>&nbsp;</div>
-  
+
 <div align="center">
   <img src="https://github.com/IndustryEssentials/ymir-images/blob/main/doc_images/wechat_code.jpg" width="180"/>
   <img src="https://github.com/IndustryEssentials/ymir-images/blob/main/doc_images/contact.jpg" width="400"/>
-  
+
   📫 使用问题反馈：contact.viesc@gmail.com / 服务器级设备专业咨询：tensor.station@gmail.com
-  
+
 <div>&nbsp;</div>&nbsp;</div>
+
+[English](README.md) | 简体中文
 
 # 文章引用
 
@@ -54,16 +56,33 @@
 
 ```bibtex
 @inproceedings{huang2021ymir,
-      title={YMIR: A Rapid Data-centric Development Platform for Vision Applications}, 
+      title={YMIR: A Rapid Data-centric Development Platform for Vision Applications},
       author={Phoenix X. Huang and Wenze Hu and William Brendel and Manmohan Chandraker and Li-Jia Li and Xiaoyu Wang},
       booktitle={Proceedings of the Data-Centric AI Workshop at NeurIPS},
       year={2021},
 }
 ```
 
-## 简介
+# 更新内容
 
-[English](README.md) | 简体中文
+1.1.0版本更新时间为5/17/2022
+
+YMIR平台
+- 新增数据集/模型隐藏和还原功能；
+- 支持在迭代开始前修改项目训练类别；
+- 新增模型测试模块和模型推理结果比对功能；
+- 优化代码结构；
+
+Docker
+- 支持 [yolov5](https://github.com/ultralytics/yolov5)
+- 支持 [mmdetection](https://github.com/open-mmlab/mmdetection)
+- 支持 [yolov7](https://github.com/wongkinyiu/yolov7)
+- 支持 [detectron2](https://github.com/facebookresearch/detectron2)
+- 支持 [An Extendable, Efficient and Effective Transformer-based Object Detector](https://github.com/naver-ai/vidt)
+
+查看更多内容 [ymir-executor-fork](https://github.com/modelai/ymir-executor-fork) 
+
+## 简介
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -71,6 +90,7 @@
 **目录**
 
 - [文章引用](#文章引用)
+- [更新内容](#更新内容)
 - [1. AI SUITE-YMIR介绍](#1--ai-suite-ymir%E4%BB%8B%E7%BB%8D)
   - [1.1.	主要功能](#11-主要功能)
   - [1.2.	申请试用](#12-申请试用)
@@ -181,15 +201,43 @@ YMIR平台主要满足用户规模化生产模型的需求，为用户提供良�
 
 ## 2.1. 环境依赖
 
-1. GPU版本需要GPU，并安装nvidia驱动: [https://www.nvidia.cn/geforce/drivers/](https://www.nvidia.cn/geforce/drivers/) 
+1. GPU版本需要GPU，并安装nvidia驱动: [https://www.nvidia.cn/geforce/drivers/](https://www.nvidia.cn/geforce/drivers/)
 
 2. 需要安装docker：
-*  Docker & Docker Compose 安装： [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/) 
+*  Docker & Docker Compose 安装： [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 *  NVIDIA Docker安装： [https://github.com/NVIDIA/nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
- 
+* 检查 nvidia-docker 安装, 详情参考 [nvidia-docker install-guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+
+```sh
+sudo docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
+
+## 上述命令在终端应输出类似以下的结果
+
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.60.02    Driver Version: 510.60.02    CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla P4            Off  | 00000000:0B:00.0 Off |                    0 |
+| N/A   62C    P0    55W /  75W |   4351MiB /  7680MiB |     94%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|    0   N/A  N/A      8132      C                                    4349MiB |
++-----------------------------------------------------------------------------+
+```
+
 3. 推荐服务器配置：
 *  NVIDIA GeForce RTX 2080 Ti 12G
 *  显存最大值到达9974MiB
+*  CUDA 版本 >= 11.2 (低版本CUDA只能使用低版本镜像)
 
 ## 2.2. 安装 YMIR-GUI
 
@@ -919,11 +967,11 @@ YMIR repo中的任何代码都应遵循编码标准，并将在CI测试中进行
 [![All Contributors](https://img.shields.io/badge/All%20Contributors-8-brightgreen)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-<a href="https://github.com/phoenix-xhuang"><img src="https://avatars.githubusercontent.com/u/89957974?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/IJtLJZ8Rm4Yr"><img src="https://avatars.githubusercontent.com/u/90443055?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/elliotmessi"><img src="https://avatars.githubusercontent.com/u/90443217?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/Aryalfrat"><img src="https://avatars.githubusercontent.com/u/90443348?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/fenrir-z"><img src="https://avatars.githubusercontent.com/u/90444968?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/under-chaos"><img src="https://avatars.githubusercontent.com/u/90446262?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/Zhang-SJ930104"><img src="https://avatars.githubusercontent.com/u/91466580?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/LuciferZap"><img src="https://avatars.githubusercontent.com/u/92283801?v=4" class="avatar-user" width="18px;"/></a> 
+<a href="https://github.com/phoenix-xhuang"><img src="https://avatars.githubusercontent.com/u/89957974?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/IJtLJZ8Rm4Yr"><img src="https://avatars.githubusercontent.com/u/90443055?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/elliotmessi"><img src="https://avatars.githubusercontent.com/u/90443217?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/Aryalfrat"><img src="https://avatars.githubusercontent.com/u/90443348?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/fenrir-z"><img src="https://avatars.githubusercontent.com/u/90444968?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/under-chaos"><img src="https://avatars.githubusercontent.com/u/90446262?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/Zhang-SJ930104"><img src="https://avatars.githubusercontent.com/u/91466580?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/LuciferZap"><img src="https://avatars.githubusercontent.com/u/92283801?v=4" class="avatar-user" width="18px;"/></a>

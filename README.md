@@ -30,44 +30,64 @@
   <img src="https://github.com/IndustryEssentials/ymir-images/blob/main/doc_images/for_labeling.png" width="200"/>
   <img src="https://github.com/IndustryEssentials/ymir-images/blob/main/doc_images/for_training.png" width="200"/>
   <div>&nbsp;</div>
-  
+
 [📘Usage Instruction](https://github.com/IndustryEssentials/ymir/blob/master/README_zh-CN.md#3-gui%E4%BD%BF%E7%94%A8-%E5%85%B8%E5%9E%8B%E6%A8%A1%E5%9E%8B%E7%94%9F%E4%BA%A7%E6%B5%81%E7%A8%8B) |
 [🛠️Installation](https://github.com/IndustryEssentials/ymir/blob/master/README_zh-CN.md#2-%E5%AE%89%E8%A3%85) |
 [👀Equipment](https://c1n.cn/obvHf) |
-[🚀Projects](https://github.com/IndustryEssentials/ymir/projects) | 
-[🤔Issues Report](https://github.com/IndustryEssentials/ymir/issues/new/choose) | 
+[🚀Projects](https://github.com/IndustryEssentials/ymir/projects) |
+[🤔Issues Report](https://github.com/IndustryEssentials/ymir/issues/new/choose) |
 [📰Lisence](https://github.com/IndustryEssentials/ymir/blob/master/LICENSE)
-  
+
 </div>&nbsp;</div>
-  
+
 <div align="center">
   <img src="https://github.com/IndustryEssentials/ymir-images/blob/main/doc_images/wechat_code.jpg" width="180"/>
   <img src="https://github.com/IndustryEssentials/ymir-images/blob/main/doc_images/contact.jpg" width="400"/>
-  
+
   📫 Feedback on usage issues: contact.viesc@gmail.com / Professional consulting for server equipment: tensor.station@gmail.com
 <div>&nbsp;</div>&nbsp;</div>
+
+English | [简体中文](README_zh-CN.md)
 
 # Citations
 
 If you wish to refer to YMIR in your work, please use the following BibTeX entry.
 ```bibtex
 @inproceedings{huang2021ymir,
-      title={YMIR: A Rapid Data-centric Development Platform for Vision Applications}, 
+      title={YMIR: A Rapid Data-centric Development Platform for Vision Applications},
       author={Phoenix X. Huang and Wenze Hu and William Brendel and Manmohan Chandraker and Li-Jia Li and Xiaoyu Wang},
       booktitle={Proceedings of the Data-Centric AI Workshop at NeurIPS},
       year={2021},
 }
 ```
 
-## Introduction
+# What's New
 
-English | [简体中文](README_zh-CN.md)
+1.1.0 was released in 5/17/2022
+
+system
+- new dataset/model hiding and restoring functions.
+- support for modifying the project training category before the start of the iteration.
+- adding a new model testing module and model inference result comparison function.
+- optimizing the code structure.
+
+docker
+- support [yolov5](https://github.com/ultralytics/yolov5)
+- support [mmdetection](https://github.com/open-mmlab/mmdetection)
+- support [yolov7](https://github.com/wongkinyiu/yolov7)
+- support [detectron2](https://github.com/facebookresearch/detectron2)
+- support [An Extendable, Efficient and Effective Transformer-based Object Detector](https://github.com/naver-ai/vidt)
+
+view [ymir-executor-fork](https://github.com/modelai/ymir-executor-fork) for detail 
+
+## Introduction
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Catalog**
 
 - [Citations](#citations)
+- [What's New](#whats-new)
 - [1. Introduction to AI SUITE-YMIR](#1-introduction-to-ai-suite-ymir)
   - [1.1. Main functions](#11-main-functions)
   - [1.2. Apply for trial](#12-apply-for-trial)
@@ -188,9 +208,39 @@ This chapter contains the installation instructions for YMIR-GUI. If you need to
 
 * Installation of NVIDIA Docker https://github.com/NVIDIA/nvidia-docker
 
+* check nvidia-docker installation, view [nvidia-docker install-guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) for detail
+
+```sh
+sudo docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
+
+## This should result in a console output shown below:
+
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.60.02    Driver Version: 510.60.02    CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Tesla P4            Off  | 00000000:0B:00.0 Off |                    0 |
+| N/A   62C    P0    55W /  75W |   4351MiB /  7680MiB |     94%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|    0   N/A  N/A      8132      C                                    4349MiB |
++-----------------------------------------------------------------------------+
+```
+
 3. Hardware Suggestions
 
 * NVIDIA GeForce RTX 2080 Ti or higher is recommended.
+
+* CUDA Version >= 11.2 (CUDA 10.2 cannot use docker image with CUDA 11)
 
 ## 2.2. Installation of YMIR-GUI
 
@@ -204,7 +254,7 @@ The YMIR-GUI project package is on DockerHub and the steps to install and deploy
 git clone git@github.com:IndustryEssentials/ymir.git
   ```
 
-2. If there is no available GPU and you need to install CPU mode, please change it to CPU boot mode by modifying the .env file to change the SERVER_RUNTIME parameter to runc: 
+2. If there is no available GPU and you need to install CPU mode, please change it to CPU boot mode by modifying the .env file to change the SERVER_RUNTIME parameter to runc:
 
 `# nvidia for gpu, runc for cpu.`
 
@@ -952,11 +1002,11 @@ It has not been fully tested on Windows server, so we cannot provide service sup
 [![All Contributors](https://img.shields.io/badge/All%20Contributors-8-brightgreen)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-<a href="https://github.com/phoenix-xhuang"><img src="https://avatars.githubusercontent.com/u/89957974?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/IJtLJZ8Rm4Yr"><img src="https://avatars.githubusercontent.com/u/90443055?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/elliotmessi"><img src="https://avatars.githubusercontent.com/u/90443217?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/Aryalfrat"><img src="https://avatars.githubusercontent.com/u/90443348?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/fenrir-z"><img src="https://avatars.githubusercontent.com/u/90444968?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/under-chaos"><img src="https://avatars.githubusercontent.com/u/90446262?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/Zhang-SJ930104"><img src="https://avatars.githubusercontent.com/u/91466580?v=4" class="avatar-user" width="18px;"/></a> 
-<a href="https://github.com/LuciferZap"><img src="https://avatars.githubusercontent.com/u/92283801?v=4" class="avatar-user" width="18px;"/></a> 
+<a href="https://github.com/phoenix-xhuang"><img src="https://avatars.githubusercontent.com/u/89957974?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/IJtLJZ8Rm4Yr"><img src="https://avatars.githubusercontent.com/u/90443055?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/elliotmessi"><img src="https://avatars.githubusercontent.com/u/90443217?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/Aryalfrat"><img src="https://avatars.githubusercontent.com/u/90443348?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/fenrir-z"><img src="https://avatars.githubusercontent.com/u/90444968?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/under-chaos"><img src="https://avatars.githubusercontent.com/u/90446262?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/Zhang-SJ930104"><img src="https://avatars.githubusercontent.com/u/91466580?v=4" class="avatar-user" width="18px;"/></a>
+<a href="https://github.com/LuciferZap"><img src="https://avatars.githubusercontent.com/u/92283801?v=4" class="avatar-user" width="18px;"/></a>
