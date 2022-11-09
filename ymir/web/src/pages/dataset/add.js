@@ -13,11 +13,12 @@ import Breadcrumbs from '@/components/common/breadcrumb'
 import Uploader from '@/components/form/uploader'
 import ProjectDatasetSelect from '@/components/form/projectDatasetSelect'
 import Desc from "@/components/form/desc"
+import DatasetName from '../../components/form/items/datasetName'
+import { FormatDetailModal } from './components/formatDetailModal'
+import Dataset from '@/components/form/option/Dataset'
 
 import s from './add.less'
 import samplePic from '@/assets/sample.png'
-import DatasetName from '../../components/form/items/datasetName'
-import { FormatDetailModal } from './components/formatDetailModal'
 
 const { Option } = Select
 const { useForm } = Form
@@ -69,7 +70,7 @@ const Add = (props) => {
   const [updateResult, updateProject] = useFetch('project/updateProject')
 
   useEffect(() => {
-    form.setFieldsValue({ datasetId: null })
+    form.setFieldsValue({ did: null })
     setDefaultName('')
   }, [currentType])
 
@@ -163,11 +164,11 @@ const Add = (props) => {
   function addDataset(values) {
     let params = {
       ...values,
-      projectId: pid,
+      pid,
       url: (values.url || '').trim(),
     }
     if (currentType === TYPES.COPY) {
-      params.datasetId = params.datasetId[1]
+      params.did = params.did[1]
     }
     if (currentType === TYPES.LOCAL) {
       if (file) {
@@ -276,7 +277,7 @@ const Add = (props) => {
                 <Form.Item
                   label={t('dataset.add.form.internal.label')}
                   tooltip={t('tip.task.filter.datasets')}
-                  name='datasetId'
+                  name='did'
                   initialValue={selectedDataset}
                   rules={isType(TYPES.INTERNAL) ? [
                     { required: true, message: t('dataset.add.form.internal.required') }
@@ -288,7 +289,7 @@ const Add = (props) => {
                     options={publicDatasets.map(dataset => ({
                       value: dataset.id,
                       dataset,
-                      label: `${dataset.name} ${dataset.versionName} (Total: ${dataset.assetCount})`
+                      label: <Dataset dataset={dataset} />
                     }))}>
                   </Select>
                 </Form.Item>
@@ -316,7 +317,7 @@ const Add = (props) => {
             {isType(TYPES.COPY) ? (
               <Form.Item
                 label={t('dataset.add.form.copy.label')}
-                name='datasetId'
+                name='did'
                 rules={[
                   { required: true, message: t('dataset.add.form.copy.required') }
                 ]}

@@ -9,7 +9,7 @@ import Empty from "@/components/empty/default"
 import { getStageLabel } from '@/constants/iteration'
 
 import s from "./detail.less"
-import { TrainIcon, NavDatasetIcon, ArrowRightIcon, ImportIcon } from "@/components/common/icons"
+import { TrainIcon, NavDatasetIcon, ArrowRightIcon, ImportIcon } from "@/components/common/Icons"
 
 function ProjectDetail(func) {
   const history = useHistory()
@@ -36,7 +36,7 @@ function ProjectDetail(func) {
   return (
     <div>
       <Breadcrumbs />
-      <div className={s.header}>
+      {project.enableIteration ? <div className={s.header}>
         {project.round > 0 ? <div>
           <span style={{ marginRight: 20 }}>{t('project.iteration.entrance.status', {
             stateLabel: <span className='orange'>{t(getStageLabel(project.currentStage, project.round))}</span>
@@ -48,9 +48,9 @@ function ProjectDetail(func) {
             <p>{t('project.iteration.entrance.empty.info')}</p>
             <Button type="primary" onClick={() => history.push(`/home/project/${id}/iterations`)}>
               <TrainIcon /> {t('project.iteration.entrance.empty.btn')}
-              </Button>
+            </Button>
           </div>}
-      </div>
+      </div> : null}
       <Space className="actions">
         <Button type="primary" onClick={add}><ImportIcon /> {t("dataset.import.label")}</Button>
         <Button type="primary" onClick={goTraining}><TrainIcon /> {t("project.iteration.stage.training")}</Button>

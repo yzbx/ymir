@@ -2,7 +2,6 @@ import enum
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
-from fastapi.encoders import jsonable_encoder
 from fastapi.logger import logger
 from sqlalchemy.orm import Session
 
@@ -162,7 +161,7 @@ def import_model(
         user_id=current_user.id,
         task_id=task.id,
     )
-    model = crud.model.create_with_version(db=db, obj_in=model_in, dest_group_name=model_import.group_name)
+    model = crud.model.create_with_version(db=db, obj_in=model_in)
     logger.info("[import model] model record created: %s", model)
 
     # 5. run background task
@@ -178,29 +177,7 @@ def import_model(
     return {"result": model}
 
 
-def create_model_record(db: Session, model_import: schemas.ModelImport, task: models.Task) -> models.Model:
-    """
-    bind task info to model record
-    """
-    model_info = jsonable_encoder(model_import)
-    model_info.update(
-        {
-            "hash": task.hash,
-            "task_id": task.id,
-            "user_id": task.user_id,
-        }
-    )
-    return crud.model.create(db, obj_in=schemas.ModelCreate(**model_info))
-
-
-@router.delete(
-    "/{model_id}",
-    response_model=schemas.ModelOut,
-    responses={
-        400: {"description": "No permission"},
-        404: {"description": "Model Not Found"},
-    },
-)
+@router.delete("/{model_id}", response_model=schemas.ModelOut)
 def delete_model(
     *,
     db: Session = Depends(deps.get_db),
@@ -219,24 +196,19 @@ def delete_model(
     return {"result": model}
 
 
-@router.patch(
-    "/{model_id}",
-    response_model=schemas.ModelOut,
-    responses={
-        400: {"description": "No permission"},
-        404: {"description": "Model Not Found"},
-    },
-)
+@router.patch("/{model_id}", response_model=schemas.ModelOut)
 def update_model(
     *,
     db: Session = Depends(deps.get_db),
     model_id: int = Path(..., example="12"),
-    stage: schemas.StageChange,
+    model_update: schemas.ModelUpdate,
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
+    model = crud.model.get_by_user_and_id(db, user_id=current_user.id, id=model_id)
+    if not model:
+        raise ModelNotFound()
 
-    model = crud.model.update_recommonded_stage(db, model_id=model_id, stage_id=stage.stage_id)
-
+    model = crud.model.update(db, db_obj=model, obj_in=model_update)
     return {"result": model}
 
 

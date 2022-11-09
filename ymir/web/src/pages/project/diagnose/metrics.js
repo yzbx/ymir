@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { Card, Button, Form, Row, Col, Radio, Slider, Select, InputNumber, Checkbox, Space, Tag, } from "antd"
+import { useLocation } from "umi"
 
 import t from "@/utils/t"
 import useFetch from "@/hooks/useFetch"
@@ -10,9 +11,10 @@ import CurveView from "./components/curveView"
 import PView from "./components/prView"
 import View from './components/view'
 import DefaultStages from "./components/defaultStages"
+import Tip from "@/components/form/singleTip"
 
 import s from "./index.less"
-import { CompareIcon } from "@/components/common/icons"
+import { CompareIcon } from "@/components/common/Icons"
 
 const metricsTabs = [
   { value: 'map', component: MapView, ck: true },
@@ -29,6 +31,7 @@ const xAxisOptions = [
 const kwTypes = [{ label: 'keyword.add.name.label', value: 0 }, { label: 'keyword.ck.label', value: 1 }]
 
 function Matrics({ pid, project }) {
+  const { state } = useLocation()
   const [form] = Form.useForm()
   const [inferTasks, setInferTasks] = useState([])
   const [selectedModels, setSelectedModels] = useState([])
@@ -58,6 +61,14 @@ function Matrics({ pid, project }) {
   useEffect(() => {
     setDiagnosis(remoteData)
   }, [remoteData])
+
+  useEffect(() => {
+    if (state?.mid) {
+      form.setFieldsValue({
+        stage: [state.mid],
+      })
+    }
+  }, [state])
 
   useEffect(() => {
     if (diagnosing) {
@@ -112,7 +123,7 @@ function Matrics({ pid, project }) {
     const inferDataset = inferTasks.map(({ result }) => result)
     const params = {
       ...values,
-      projectId: pid,
+      pid,
       everageIou,
       datasets: inferDataset,
     }
@@ -217,14 +228,14 @@ function Matrics({ pid, project }) {
 
   const renderViewPanel = () => <div className={s.metricsPanel}>{renderView()}</div>
 
-  const renderIouTitle = <Space>
-    <span>{t('model.diagnose.form.iou')}</span>
-    <Checkbox checked={everageIou} onChange={({ target: { checked } }) => setEverageIou(checked)}>Average IOU</Checkbox>
-  </Space>
+  const renderIouOptionLabel = type => <>
+    {t(`model.diagnose.form.iou.${type}`)}
+    <Tip className={s.iouTip} content={t(`model.diagnose.form.iou.${type}.tip`)} placement='top' arrowPointAtCenter />
+    </>
 
   const iouOptions = [
-    { value: true, label: t('model.diagnose.form.iou.everage') },
-    { value: false, label: t('model.diagnose.form.iou.single') },
+    { value: true, label: renderIouOptionLabel('everage') },
+    { value: false, label: renderIouOptionLabel('single') },
   ]
 
   // todo form initial values

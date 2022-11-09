@@ -1,5 +1,7 @@
 
-import { Result, BackendData } from "@/interface/common"
+import { Result, BackendData, Group } from "@/interface/common"
+import { ModelVersion } from "./model"
+import { ImageConfig } from './image'
 type Keywords = {
   [key: string]: number,
 }
@@ -21,11 +23,7 @@ type AnylysisAnnotation = {
   area: Array<BackendData>,
   areaRatio: Array<BackendData>,
 }
-export interface DatasetGroup {
-  id: number,
-  name: string,
-  projectId: number,
-  createTime: string,
+export interface DatasetGroup extends Group {
   versions?: Array<Dataset>,
 }
 
@@ -38,6 +36,14 @@ export interface Dataset extends Result {
   inferClass?: Array<string>,
   cks?: BackendData,
   tags?: BackendData,
+}
+
+export interface InferDataset extends Dataset {
+  inferModelId: number[],
+  inferModel?: ModelVersion,
+  inferDatasetId: number,
+  inferDataset?: Dataset,
+  inferConfig: ImageConfig,
 }
 
 export interface DatasetAnalysis {
