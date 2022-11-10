@@ -1,8 +1,8 @@
 version: "3.3"
 services:
   backend:
-    # image: industryessentials/ymir-backend:1.3.0
-    image: zzw-backend:test
+    image: industryessentials/ymir-backend:2.0.0
+    # image: zzw-backend:test
     env_file:
       - .env
     runtime: ${SERVER_RUNTIME}
@@ -80,8 +80,8 @@ services:
       - ymirnetwork_test
 
   web:
-    # image: industryessentials/ymir-web:1.3.0
-    image: zzw-web:test
+    image: industryessentials/ymir-web
+    # image: zzw-web:test
     volumes:
       - "${YMIR_PATH}/ymir-models:/data/ymir/ymir-models"
       - "${YMIR_PATH}/ymir-assets:/data/ymir/ymir-assets"
