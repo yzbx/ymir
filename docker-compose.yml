@@ -80,7 +80,7 @@ services:
       - ymirnetwork_test
 
   web:
-    image: industryessentials/ymir-web
+    image: industryessentials/ymir-web:2.0.0
     # image: zzw-web:test
     volumes:
       - "${YMIR_PATH}/ymir-models:/data/ymir/ymir-models"
