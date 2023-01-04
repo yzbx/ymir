@@ -1,8 +1,9 @@
 version: "3.3"
 services:
   backend:
-    image: industryessentials/ymir-backend:2.0.0
+    image: industryessentials/ymir-backend:yzbx-2.0.0
     # image: zzw-backend:test
+    # image: industryessentials/ymir-backend:release-2.0.2
     env_file:
       - .env
     runtime: ${SERVER_RUNTIME}
@@ -61,7 +62,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - ymirnetwork_test
+      - ymirnetwork_yzbx
 
   redis:
     image: industryessentials/ymir-backend-redis
@@ -77,18 +78,20 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - ymirnetwork_test
+      - ymirnetwork_yzbx
 
   web:
-    image: industryessentials/ymir-web:2.0.0
+    image: industryessentials/ymir-web:yzbx-2.0.0
     # image: zzw-web:test
+    # image: industryessentials/ymir-web:release-2.0.2
     volumes:
       - "${YMIR_PATH}/ymir-models:/data/ymir/ymir-models"
       - "${YMIR_PATH}/ymir-assets:/data/ymir/ymir-assets"
       - "${YMIR_PATH}/ymir-storage:/data/ymir/ymir-storage"
     environment:
-      - LABEL_TOOL_HOST_URL=${LABEL_TOOL_HOST_URL}
+      - LABEL_TOOL_HOST_PORT=${LABEL_TOOL_HOST_PORT}
       - DEPLOY_MODULE_URL=${DEPLOY_MODULE_URL}
+      - PUBLIC_IMAGE_URL=${PUBLIC_IMAGE_URL}
     ports:
       - ${NGINX_PORT}:80
     restart: on-failure:10
@@ -101,7 +104,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - ymirnetwork_test
+      - ymirnetwork_yzbx
 
   db:
     image: 'mysql/mysql-server:8.0.25'
@@ -120,7 +123,7 @@ services:
         retries: 3
         start_period: 30s
     networks:
-      - ymirnetwork_test
+      - ymirnetwork_yzbx
 
   tensorboard:
     image: tensorflow/tensorflow:2.9.1
@@ -137,7 +140,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - ymirnetwork_test
+      - ymirnetwork_yzbx
 
   mongodb:
     image: mongo:4.4
@@ -155,10 +158,10 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - ymirnetwork_test
+      - ymirnetwork_yzbx
 
 networks:
-  ymirnetwork_test:
+  ymirnetwork_yzbx:
     driver: bridge
     ipam:
       driver: default

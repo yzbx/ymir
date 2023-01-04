@@ -16,6 +16,7 @@ const errors = {
     en: 'Can not hide protected resource, such as result of current iteration, training, validation, and mining dataset related to project, or in-progress dataset/model',
   },
   'error110112': { cn: '系统升级导致token失效，需要重新登录', en: 'Invalid token by system upgrading, please login again', },
+  'error110113': { cn: '无法发送邮件，请联系管理员检查邮箱配置', en: 'Email send failed, please contact administrator to check email configuration.', },
   'error110201': { cn: '找不到该用户，请重试', en: 'USER_NOT_FOUND: User Not Found, retry or contact admin.', },
   'error110202': { cn: '邮箱已注册，请选择新的邮箱注册', en: 'USER_DUPLICATED_NAME: Duplicated Email, try another one', },
   'error110203': { cn: '用户未授权访问', en: 'USER_NOT_ACCESSIBLE: User is Unaccessable', },
@@ -55,7 +56,7 @@ const errors = {
   'error110902': { cn: '推理镜像配置错误', en: 'Inference docker image configuration error', },
   'error111101': { cn: '镜像名称或地址重复', en: 'Duplicated docker image name/url', },
   'error111102': { cn: '找不到镜像', en: 'Docker image is not found', },
-  'error111103': { cn: '共享镜像失败', en: 'Share docker image failed', },
+  'error111103': { cn: '发布镜像失败', en: 'Publish docker image failed', },
   'error111104': { cn: '此镜像关联其他镜像，请清除关联后再处理', en: 'Clean relationships of docker images before deleting it', },
   'error111105': { cn: '分享镜像失败', en: 'FAILED_TO_GET_SHARED_DOCKER_IMAGES', },
   'error111106': { cn: '分享镜像配置获取失败', en: 'SHARED_IMAGE_CONFIG_ERROR', },
@@ -107,6 +108,7 @@ const errors = {
   'error169999': { cn: 'CMD: 未知错误', en: 'RC_CMD_ERROR_UNKNOWN: unkown error', },
   'error111705': {cn: '找不到迭代步骤', en: 'Iteration step is not found.', },
   'error111706': {cn: '迭代步骤已经完成', en: 'Iteration step is already finished.', },
+  'error111707': {cn: '迭代已重复创建', en: 'Duplicated Iteration.', },
 }
 
 export default errors

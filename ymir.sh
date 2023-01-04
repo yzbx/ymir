@@ -2,19 +2,13 @@
 
 set -e
 
-EXECUTOR_TMI='youdaoyzbx/ymir-executor:ymir2.0.0-yolov5-cu111-tmi'
-
-DOCKER_BACKEND="industryessentials/ymir-backend:ymir1.3.0"
-DOCKER_WEB="industryessentials/ymir-web:ymir1.3.0"
+DOCKER_BACKEND='industryessentials/ymir-backend:yzbx-2.0.0'
+DOCKER_WEB='industryessentials/ymir-web:yzbx-2.0.0'
 
 DEV_SOURCE_BACKEND_PIP='https://pypi.mirrors.ustc.edu.cn/simple'
 DEV_SOURCE_WEB_NPM='https://registry.npmmirror.com'
 
-FIELD_ALLOW_FEEDBACK='ALLOW_ANONYMOUS_FEEDBACK'
-FIELD_UUID='ANONYMOUS_UUID'
 FIELD_LABEL_TOOL='LABEL_TOOL'
-FIELD_LABEL_TOOL_HOST_IP='LABEL_TOOL_HOST_IP'
-FIELD_LABEL_TOOL_TOKEN='LABEL_TOOL_TOKEN'
 FIELD_LABEL_TOOL_LS='label_studio'
 FIELD_LABEL_TOOL_LF='label_free'
 ENV_FILE='.env'
@@ -27,40 +21,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose
 }
 
 pre_start() {
-docker pull ${EXECUTOR_TMI}
 stop
-}
-
-choose_yes () {
-sed -i.bk "s/^${FIELD_ALLOW_FEEDBACK}=.*/${FIELD_ALLOW_FEEDBACK}=True/" ${ENV_FILE} && rm -f ${ENV_FILE}.bk
-
-uuid=$(uuidgen)
-sed -i.bk "s/^${FIELD_UUID}=$/${FIELD_UUID}=${uuid}/" ${ENV_FILE} && rm -f *.bk
-}
-
-choose_no () {
-sed -i.bk "s/^${FIELD_ALLOW_FEEDBACK}=.*/${FIELD_ALLOW_FEEDBACK}=False/" ${ENV_FILE} && rm -f ${ENV_FILE}.bk
-}
-
-check_permission() {
-if ! cat ${ENV_FILE} | grep "${FIELD_ALLOW_FEEDBACK}=$"; then
-    echo "permission already set"
-    return
-fi
-
-cat <<- EOF
-Would you allow YMIR to send us automatic reports helps us prioritize what to fix and improve in YMIR?
-These reports can include things like task type, how much resources you’re using. NO personal information collected.
-EOF
-
-while true; do
-    read -p "You choose (Y/n)?" yn
-    case $yn in
-        [Yy]*|'' ) choose_yes; break;;
-        [Nn]* ) choose_no; break;;
-        * ) echo "Please answer (y)es or (n)o.";;
-    esac
-done
 }
 
 set_label_tool() {
@@ -70,7 +31,6 @@ if ! cat ${ENV_FILE} | grep "${FIELD_LABEL_TOOL}=$"; then
 fi
 
 cat <<- EOF
-Before proceed, make sure to set LABEL_TOOL_HOST_IP, LABEL_TOOL_HOST_PORT, LABEL_TOOL_TOKEN fields as needed.
 Which label-tool would you like to start (1/2/3)?
 1.Label Studio
 2.Label Free
@@ -90,31 +50,16 @@ done
 }
 
 start_label_tool() {
-set_label_tool
 if cat ${ENV_FILE} | grep "${FIELD_LABEL_TOOL}=$"; then
     echo "no label_tool set, skip."
     return
 fi
 
-# check label tool ip address.
-if ! cat ${ENV_FILE} | grep -oE "${FIELD_LABEL_TOOL_HOST_IP}=http://\b([0-9]{1,3}\.){3}[0-9]{1,3}\b"; then
-    echo "Label tool's IP is not set, expected format: http://xxx.xxx.xxx.xxx"
-    exit
-fi
-
 if cat ${ENV_FILE} | grep "${FIELD_LABEL_TOOL}=${FIELD_LABEL_TOOL_LS}"; then
     echo "label-studio set, starting..."
-    if ! cat ${ENV_FILE} | grep -oE "${FIELD_LABEL_TOOL_TOKEN}=\"Token \b[0-9a-z]{40}\b\""; then
-        echo "Label studio's token is not set, expected format: Token xxxxx..."
-        exit
-    fi
     docker-compose -f docker-compose.label_studio.yml up -d
     return
 elif cat ${ENV_FILE} | grep "${FIELD_LABEL_TOOL}=${FIELD_LABEL_TOOL_LF}"; then
-    if ! cat ${ENV_FILE} | grep -oE "${FIELD_LABEL_TOOL_TOKEN}=\"Bearer "; then
-        echo "Label free's token is not set, expected format: Bearer xxxxx..."
-        exit
-    fi
     echo "label-free set, starting..."
     docker-compose -f docker-compose.labelfree.yml up -d
     return
@@ -140,10 +85,7 @@ start_deploy_module() {
 }
 
 start() {
-check_permission
-# pre_start
-
-start_label_tool
+pre_start
 
 start_deploy_module
 
@@ -162,7 +104,9 @@ else
     printf '\nin prod mode, starting service.\n'
 fi
 
+set_label_tool
 docker-compose up -d
+start_label_tool
 }
 
 update() {
