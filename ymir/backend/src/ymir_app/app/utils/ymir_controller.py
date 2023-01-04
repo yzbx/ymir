@@ -10,7 +10,7 @@ from google.protobuf.json_format import MessageToDict
 from google.protobuf.text_format import MessageToString
 
 from app.config import settings
-from app.constants.state import TaskType, AnnotationType, DatasetType
+from app.constants.state import TaskType, AnnotationType, DatasetType, ObjectType
 from app.schemas.common import ImportStrategy, MergeStrategy
 from app.schemas.task import TrainingDatasetsStrategy
 from common_utils.labels import UserLabels, userlabels_to_proto
@@ -43,6 +43,13 @@ MERGE_STRATEGY_MAPPING = {
 }
 
 
+OBJECT_TYPE_MAPPING = {
+    ObjectType.classification: mir_cmd_pb.ObjectType.OT_CLASS,
+    ObjectType.object_detect: mir_cmd_pb.ObjectType.OT_DET_BOX,
+    ObjectType.segmentation: mir_cmd_pb.ObjectType.OT_SEG,
+}
+
+
 TRAINING_DATASET_STRATEGY_MAPPING = {
     TrainingDatasetsStrategy.stop: mirsvrpb.MergeStrategy.STOP,
     TrainingDatasetsStrategy.as_training: mirsvrpb.MergeStrategy.HOST,
@@ -65,7 +72,7 @@ ANNOTATION_TYPE_MAPPING = {
 
 def gen_typed_datasets(typed_datasets: List[Dict]) -> Generator:
     for typed_dataset in typed_datasets:
-        dataset_with_type = mirsvrpb.TaskReqTraining.TrainingDatasetType()
+        dataset_with_type = mirsvrpb.TrainingDatasetType()
         dataset_with_type.dataset_type = typed_dataset.get("type") or int(DatasetType.training)
         dataset_with_type.dataset_id = typed_dataset["hash"]
         yield dataset_with_type
@@ -171,6 +178,7 @@ class ControllerRequest:
             if args.get("pred_dir"):
                 import_dataset_request.pred_dir = args["pred_dir"]
         import_dataset_request.clean_dirs = args["clean_dirs"]
+        import_dataset_request.anno_type = OBJECT_TYPE_MAPPING[args["object_type"]]
 
         import_dataset_request.unknown_types_strategy = IMPORTING_STRATEGY_MAPPING[strategy]
 
@@ -530,9 +538,13 @@ class ControllerClient:
                 "main_ck": main_ck,
             },
         )
-        resp = self.send(req)
-        evaluation_result = resp["evaluation"]
-        convert_class_id_to_keyword(evaluation_result, user_labels)
+        try:
+            resp = self.send(req)
+        except ValueError:
+            evaluation_result = None
+        else:
+            evaluation_result = resp["evaluation"]
+            convert_class_id_to_keyword(evaluation_result, user_labels)
         return {dataset_hash: evaluation_result}
 
     def check_repo_status(self, user_id: int, project_id: int) -> bool:

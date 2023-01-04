@@ -53,9 +53,18 @@ class IterationStepTemplate:
     def prepare_mining_initializer(
         self, name: str, project: models.Project, previous_iteration: Optional[models.Iteration]
     ) -> Dict:
-        presetting = {"mining_dataset_id": project.mining_dataset_id}
+        presetting: Dict = {"mining_dataset_id": project.mining_dataset_id}
         if not previous_iteration:
             return presetting
+
+        last_training_step = self.get_step("training", previous_iteration)
+        if last_training_step and last_training_step.presetting:
+            exclude_datasets = [
+                last_training_step.presetting.get("dataset_id"),
+                last_training_step.presetting.get("validation_dataset_id"),
+            ]
+            presetting["exclude_datasets"] = [i for i in exclude_datasets if i]
+
         sticky_parameters = ["mining_strategy", "exclude_last_result", "sampling_count"]
         prior_presetting = self.get_prior_presetting(previous_iteration, sticky_parameters)
         presetting.update(prior_presetting)

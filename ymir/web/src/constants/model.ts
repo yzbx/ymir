@@ -1,6 +1,6 @@
 import { calDuration, format } from '@/utils/date'
-import { getVersionLabel } from "./common"
-import { getLocale } from "umi"
+import { getVersionLabel } from './common'
+import { getLocale } from 'umi'
 
 export enum states {
   READY = 0,
@@ -25,6 +25,7 @@ export function transferModel(data: YModels.BackendData): YModels.Model {
     name: data.group_name,
     groupId: data.model_group_id,
     projectId: data.project_id,
+    type: data.object_type || 1,
     hash: data.hash,
     version: data.version_num || 0,
     versionName: getVersionLabel(data.version_num),
@@ -41,9 +42,9 @@ export function transferModel(data: YModels.BackendData): YModels.Model {
     taskName: data.related_task.name,
     duration: data.related_task.duration,
     durationLabel: calDuration(data.related_task.duration, getLocale()),
-    task: { ...data.related_task, durationLabel, },
+    task: { ...data.related_task, durationLabel },
     hidden: !data.is_visible,
-    stages: data.related_stages || [],
+    stages: (data.related_stages || []).map(transferStage) || [],
     recommendStage: data.recommended_stage || 0,
     description: data.description || '',
   }
@@ -51,7 +52,7 @@ export function transferModel(data: YModels.BackendData): YModels.Model {
 
 /**
  * is valid model
- * @param {YModels.Model} model 
+ * @param {YModels.Model} model
  * @returns {Boolean}
  */
 export function validModel(model: YModels.Model): Boolean {
@@ -60,7 +61,7 @@ export function validModel(model: YModels.Model): Boolean {
 
 /**
  * is invalid model
- * @param {YModels.Model} model 
+ * @param {YModels.Model} model
  * @returns {Boolean}
  */
 export function invalidModel(model: YModels.Model): Boolean {
@@ -69,7 +70,7 @@ export function invalidModel(model: YModels.Model): Boolean {
 
 /**
  * is running model
- * @param {YModels.Model} model 
+ * @param {YModels.Model} model
  * @returns {Boolean}
  */
 export function runningModel(model: YModels.Model): Boolean {
@@ -82,7 +83,7 @@ export function getModelName(data: YModels.BackendData) {
 
 /**
  * transfer backend data into stage object
- * @param {YModels.BackendData} data 
+ * @param {YModels.BackendData} data
  * @returns {YModels.Stage}
  */
 export function transferStage(data: YModels.BackendData): YModels.Stage {
@@ -92,15 +93,25 @@ export function transferStage(data: YModels.BackendData): YModels.Stage {
     map: data.map,
     modelId: data.model?.id,
     modelName: getModelName(data),
+    metrics: transferMetrics(data.metrics),
+  }
+}
+
+function transferMetrics(metrics: YModels.BackendData = {}) {
+  return {
+    ar: metrics.ar,
+    fn: metrics.fn,
+    fp: metrics.fp,
+    tp: metrics.tp,
   }
 }
 
 /**
  * get recommend stage from model
- * @param {YModels.Model} model 
+ * @param {YModels.Model} model
  * @returns {YModels.Stage|undefined}
  */
-export function getRecommendStage(model: YModels.Model): YModels.Stage| undefined {
+export function getRecommendStage(model: YModels.Model): YModels.Stage | undefined {
   return getStage(model, model.recommendStage)
 }
 
@@ -109,8 +120,8 @@ export function getRecommendStage(model: YModels.Model): YModels.Stage| undefine
  * @export
  * @param {YModels.Model} model
  * @param {number} stageId
- * @return {YModels.Stage | undefined} 
+ * @return {YModels.Stage | undefined}
  */
 export function getStage(model: YModels.Model, stageId: number): YModels.Stage | undefined {
-  return model.stages?.find(stage => stage.id === stageId)
+  return model.stages?.find((stage) => stage.id === stageId)
 }

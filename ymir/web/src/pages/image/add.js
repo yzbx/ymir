@@ -4,6 +4,7 @@ import { useParams, useHistory, useLocation } from 'umi'
 
 import s from './add.less'
 import t from '@/utils/t'
+import useFetch from '@/hooks/useFetch'
 import { formLayout } from '@/config/antd'
 import Breadcrumbs from '@/components/common/breadcrumb'
 
@@ -38,21 +39,22 @@ const Add = () => {
     if (!location.state) {
       return
     }
-    const record = location.state.record
-    if (!record?.docker_name) {
+    const record = location.state.record || {}
+    const { docker_name = '', description = '', organization = '' } = record
+    if (!docker_name) {
       return
     }
-    const { docker_name, description, organization, contributor } = record
+    const name = record.name || docker_name
     const image = {
-      name: docker_name,
+      name,
       url: docker_name,
-      description: `${description}\n---------\nOrg.: ${organization}\nContributor: ${contributor}`,
+      description: `${description}\n---------\nOrg.: ${organization}`,
     }
     setImage(image)
   }, [location.state])
 
   useEffect(() => {
-    initForm(image)
+    image?.name && initForm(image)
   }, [image])
 
   function initForm(image = {}) {
@@ -114,7 +116,7 @@ const Add = () => {
               name="url"
               rules={[{ required: true, message: t('image.add.form.url.required') }, { validator: checkImageUrl }]}
             >
-              <Input placeholder={t('image.add.form.url.placeholder')} disabled={image.url} autoComplete="off" allowClear onChange={urlChange} />
+              <Input placeholder={t('image.add.form.url.placeholder')} disabled={image?.url} autoComplete="off" allowClear onChange={urlChange} />
             </Form.Item>
             <Form.Item
               label={t('image.add.form.name')}

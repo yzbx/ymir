@@ -3,7 +3,7 @@ import os
 from typing import Dict, Iterator, List, Optional, Set, Tuple, Union
 
 import fasteners  # type: ignore
-from mir.version import YMIR_VERSION, ymir_salient_version
+from mir.version import check_ymir_version_or_crash, YMIR_VERSION
 from pydantic import BaseModel, root_validator, validator, validate_model
 import yaml
 
@@ -31,10 +31,7 @@ class LabelStorage(BaseModel):
     # protected: validators
     @validator('ymir_version')
     def _check_version(cls, v: str) -> str:
-        expected_sversion = ymir_salient_version(YMIR_VERSION)
-        current_sversion = ymir_salient_version(v)
-        if current_sversion != expected_sversion:
-            raise ValueError(f"{v}/{current_sversion}, mismatch {YMIR_VERSION}/{expected_sversion}")
+        check_ymir_version_or_crash(v)
         return v
 
     @validator('labels')
@@ -299,6 +296,7 @@ def load_or_create_userlabels(label_storage_file: str,
     if not create_ok:
         raise RuntimeError(f"label file miss in path: {label_storage_file}")
 
+    os.makedirs(os.path.dirname(label_storage_file), exist_ok=True)
     user_labels = UserLabels()
     with open(label_storage_file, 'w') as f:
         yaml.safe_dump(user_labels.dict(), f)

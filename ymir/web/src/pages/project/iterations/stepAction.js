@@ -32,6 +32,7 @@ const StepAction = ({ steps, selected, iteration, callback = () => {} }) => {
         did: settings.mining_dataset_id,
         strategy: settings.mining_strategy,
         chunk: settings.sampling_count,
+        excludes: settings.exclude_datasets,
       }),
     },
     [STEP.mining]: {
@@ -50,13 +51,14 @@ const StepAction = ({ steps, selected, iteration, callback = () => {} }) => {
       query: (settings = {}) => ({
         did: settings.dataset_id,
         type: settings.annotation_type,
+        url: settings.extra_url,
       }),
     },
     [STEP.merging]: {
       comp: Merge,
       query: (settings = {}) => ({
-        mid: settings.dataset_id,
-        did: settings.training_dataset_id ? [settings.training_dataset_id] : undefined,
+        mid: settings.dataset_id ? [settings.dataset_id] : undefined,
+        did: settings.training_dataset_id,
       }),
     },
     [STEP.training]: {
@@ -66,6 +68,7 @@ const StepAction = ({ steps, selected, iteration, callback = () => {} }) => {
         image: settings.docker_image_id,
         config: settings.docker_image_config ? JSON.parse(settings.docker_image_config) : undefined,
         test: settings.validation_dataset_id,
+        mid: settings.model_id ? [settings.model_id, settings.model_stage_id] : undefined,
       }),
     },
     [STEP.next]: {

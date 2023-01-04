@@ -25,7 +25,7 @@ const LabelTypes = () => [
 function Label({ query = {}, hidden, datasets, keywords, ok = () => {}, bottom, ...func }) {
   const pageParams = useParams()
   const pid = Number(pageParams.id)
-  const { iterationId, type } = query
+  const { iterationId, type, url } = query
   const did = Number(query.did)
   const history = useHistory()
   const [doc, setDoc] = useState(undefined)
@@ -38,11 +38,13 @@ function Label({ query = {}, hidden, datasets, keywords, ok = () => {}, bottom, 
   }, [])
 
   useEffect(() => {
-    did &&
+    const desc = url ? [{ name: url.replace(/^.*\/([^\/]+)$/, '$1') }] : undefined
       form.setFieldsValue({
-        datasetId: did,
+        datasetId: did || undefined,
         keepAnnotations: type,
+        desc,
       })
+      url && setDoc(url)
   }, [did])
 
   useEffect(() => {

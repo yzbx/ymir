@@ -8,8 +8,14 @@ from typing_extensions import Annotated
 
 from pydantic import BaseModel, EmailStr, Field, validator, root_validator
 
-from app.constants.state import AnnotationType, MiningStrategy, ResultType, TaskState, TaskType
 from app.api.errors.errors import DockerImageNotFound
+from app.constants.state import (
+    AnnotationType,
+    MiningStrategy,
+    TaskState,
+    TaskType,
+    ResultType,
+)
 from app.schemas.common import (
     Common,
     DateTimeModelMixin,
@@ -159,6 +165,12 @@ class FusionParameter(FusionParameterBase):
 
 class MergeParameter(FusionParameterBase):
     task_type: Literal["merge"]
+
+    @root_validator(pre=True)
+    def fill_in_dataset_id(cls, values: Any) -> Any:
+        if not values.get("dataset_id"):
+            values["dataset_id"] = values["include_datasets"][0]
+        return values
 
 
 class FilterParameter(FusionParameterBase):

@@ -1,8 +1,9 @@
-import { Col, Descriptions, Row } from 'antd'
+import { Col, Descriptions, Row, Tag } from 'antd'
 import React, { useEffect, useState } from 'react'
 import { Link, useSelector } from 'umi'
 
 import t from '@/utils/t'
+import { getMergeStrategyLabel, getLabelAnnotationType } from '@/constants/common'
 import { STEP } from '@/constants/iteration'
 import VersionName from '@/components/result/VersionName'
 import ModelVersionName from '@/components/result/ModelVersionName'
@@ -36,11 +37,12 @@ const FinishStep: React.FC<Props> = ({ step }) => {
       [STEP.training]: getTrainingParams,
     }
     const task = result.task
+    const config = task.parameters.docker_image_config ? JSON.parse(task.parameters.docker_image_config) : undefined
     setParamsList([
       ...maps[step.value]({
         ...task.parameters,
         gpuCount: task?.config?.gpu_count,
-        config: task.config,
+        config,
       }),
       { label: 'common.desc', content: task.parameters.description },
     ])
@@ -67,15 +69,15 @@ function getFusionParams(params: YModels.FusionParams) {
     { label: 'task.fusion.form.sampling', content: params.sampling_count },
     {
       label: 'task.fusion.form.includes.label',
-      content: params.include_datasets?.length ? params.include_datasets?.map((ds) => <VersionName key={ds} id={ds} />) : null,
+      content: params.include_datasets?.length ? params.include_datasets?.map((ds) => <Tag key={ds}><VersionName id={ds} /></Tag>) : null,
     },
     {
       label: 'task.train.form.repeatdata.label',
-      content: params.merge_strategy,
+      content: params.merge_strategy ? t(getMergeStrategyLabel(params.merge_strategy)) : null,
     },
     {
       label: 'task.fusion.form.excludes.label',
-      content: params.exclude_datasets?.map((ds) => <VersionName key={ds} id={ds} />),
+      content: params.exclude_datasets?.map((ds) => <Tag key={ds}><VersionName id={ds} /></Tag>),
     },
     {
       label: 'task.fusion.form.class.include.label',
@@ -106,6 +108,7 @@ function getMiningParams(params: YModels.MiningParams) {
 function getLabelParams(params: YModels.LabelParams) {
   return [
     { label: 'task.fusion.form.dataset', content: <VersionName id={params.dataset_id} /> },
+    { label: 'task.label.form.keep_anno.label', content: t(getLabelAnnotationType(params.annotation_type)) },
     { label: 'task.label.form.desc.label', content: params.extra_url ? <a href={params.extra_url}>{params.extra_url}</a> : null },
   ]
 }
@@ -115,11 +118,11 @@ function getMergeParams(params: YModels.MergeParams) {
     { label: 'task.fusion.form.dataset', content: <VersionName id={params.dataset_id} /> },
     {
       label: 'task.fusion.form.merge.include.label',
-      content: params.include_datasets?.length ? params.include_datasets?.map((ds) => <VersionName key={ds} id={ds} />) : null,
+      content: params.include_datasets?.length ? params.include_datasets?.map((ds) => <Tag key={ds}><VersionName id={ds} /></Tag>) : null,
     },
     {
       label: 'task.fusion.form.merge.exclude.label',
-      content: params.exclude_datasets?.length ? params.exclude_datasets?.map((ds) => <VersionName key={ds} id={ds} />) : null,
+      content: params.exclude_datasets?.length ? params.exclude_datasets?.map((ds) => <Tag key={ds}><VersionName id={ds} /></Tag>) : null,
     },
   ]
 }
@@ -129,7 +132,7 @@ function getTrainingParams(params: YModels.TrainingParams) {
     { label: 'task.train.form.image.label', content: <ImageName id={params.docker_image_id} /> },
     { label: 'task.train.form.trainsets.label', content: <VersionName id={params.dataset_id} /> },
     { label: 'task.train.form.testsets.label', content: <VersionName id={params.validation_dataset_id} /> },
-    { label: 'task.detail.label.premodel', content: <ModelVersionName id={params.model_id} stageId={params.model_stage_id} /> },
+    { label: 'task.detail.label.premodel', content: params.model_id ? <ModelVersionName id={params.model_id} stageId={params.model_stage_id} /> : null },
     { label: 'task.gpu.count', content: params.gpuCount },
     imageConfig(params.config),
   ]
