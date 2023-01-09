@@ -7,13 +7,6 @@ export const HIDDENMODULES = {
 export const INFER_DATASET_MAX_COUNT = 50000
 export const INFER_CLASSES_MAX_COUNT = 20
 
-declare global {
-  interface Window {
-    baseConfig: {
-      [name: string]: string
-    }
-  }
-}
 export enum ResultStates {
   READY = 0,
   VALID = 1,
@@ -79,6 +72,20 @@ export function getVersionLabel(version: number) {
 export const getDeployUrl = () => getThirdUrl('DEPLOY_MODULE_URL')
 
 export const getPublicImageUrl = () => getThirdUrl('PUBLIC_IMAGE_URL')
+
+/**
+ * @description generate tensorboard link
+ * @export
+ * @param {(string | string[])} [hashs=[]]
+ * @return {*} 
+ */
+export function getTensorboardLink(hashs: string | string[] = []) {
+  if (!Array.isArray(hashs)) {
+    hashs = [hashs]
+  }
+  const query = hashs.filter(hash => hash).join('|')
+  return `/tensorboard/#scalars&regexInput=${query}`
+}
 
 const getThirdUrl = (field: string) => {
   const config = window?.baseConfig || {}
