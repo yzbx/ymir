@@ -31,10 +31,11 @@
   <img src="https://github.com/IndustryEssentials/ymir-images/blob/main/doc_images/for_training.png" width="200"/>
   <div>&nbsp;</div>
 
+
 [📘Usage Instruction](https://github.com/IndustryEssentials/ymir/wiki/Operating-Instructions) |
 [🛠️Installation](README.md#2-installation) |
-[🚀Projects](https://github.com/IndustryEssentials/ymir/projects) | 
-[🤔Issues Report](https://github.com/IndustryEssentials/ymir/issues/new/choose) | 
+[🚀Projects](https://github.com/IndustryEssentials/ymir/projects) |
+[🤔Issues Report](https://github.com/IndustryEssentials/ymir/issues/new/choose) |
 [📰Lisence](https://github.com/IndustryEssentials/ymir/blob/master/LICENSE)
 
 </div>&nbsp;</div>
@@ -77,18 +78,18 @@ Docker
 - Support [mmdetection](https://github.com/open-mmlab/mmdetection)
 - Support [yolov7](https://github.com/wongkinyiu/yolov7)
 - Support [detectron2](https://github.com/facebookresearch/detectron2)
-- Support [An Extendable, Efficient and Effective Transformer-based Object Detector](https://github.com/naver-ai/vidt)
+- Support [nanodet](https://github.com/RangiLyu/nanodet)
+- Support [vidt: An Extendable, Efficient and Effective Transformer-based Object Detector](https://github.com/naver-ai/vidt)
 - Support [ymir image testing tool library](https://github.com/modelai/ymir-executor-verifier)
 - Support [demo sample image creation documentation](https://github.com/modelai/ymir-executor-fork/tree/ymir-dev/det-demo-tmi)
-- Support [ymir mirror development extension library](https://github.com/modelai/ymir-executor-sdk)
+- Support [ymir image development extension library](https://github.com/modelai/ymir-executor-sdk)
 
-View more [ymir-executor-fork](https://github.com/modelai/ymir-executor-fork) .
+View more [ymir-executor-fork](https://github.com/modelai/ymir-executor-fork)
 
 Within the public dockerimage
-- Update yolov5 training image: youdaoyzbx/ymir-executor:ymir1.3.0-yolov5-cu111-tmi
-- Update the mmdetection training image: youdaoyzbx/ymir-executor:ymir1.3.0-mmdet-cu111-tmi
-- Update the yolov5 training image to support rv1126 chip deployment: youdaoyzbx/ymir-executor:ymir1.3.0-yolov5-cu111-modelstore
-- Update the training image to support yolov5-v6.2: youdaoyzbx/ymir-executor:ymir1.3.0-yolov5-v6.2-cu111-tmi
+- Update yolov5 training image: youdaoyzbx/ymir-executor:ymir2.0.0-yolov5-cu111-tmi
+- Update mmdetection training image: youdaoyzbx/ymir-executor:ymir2.0.0-mmdet-cu111-tmi
+- Update yolov5 image with rv1126 chip deployment support: youdaoyzbx/ymir-executor:ymir2.0.0-yolov5-cu111-tmid
 
 More code updates [ymir-dev](https://github.com/modelai/ymir-executor-fork/tree/ymir-dev).
 
@@ -209,7 +210,9 @@ This chapter contains the installation instructions for YMIR-GUI. If you need to
 
 1.NVIDIA drivers shall be properly installed before installing YMIR. For detailed instructions, see https://www.nvidia.cn/geforce/drivers/.
 
-2. Docker installation:
+2. Docker and Docker Compose installation:
+
+* docker compose >= 1.29.2, docker >= 20.10
 
 * Installation of Docker and Docker Compose https://docs.docker.com/get-docker/
 
@@ -258,7 +261,7 @@ The YMIR-GUI project package is on DockerHub and the steps to install and deploy
 1.  Clone the deployment project YMIR to the local server:
 
   ```sh
-git clone git@github.com:IndustryEssentials/ymir.git
+git clone https://github.com/IndustryEssentials/ymir.git
   ```
 
 2. If there is no available GPU and you need to install CPU mode, please change it to CPU boot mode by modifying the .env file to change the SERVER_RUNTIME parameter to runc:
@@ -270,15 +273,7 @@ git clone git@github.com:IndustryEssentials/ymir.git
 3. If you do not need to use the **label free** labeling platform, you can directly execute the start command with the default configuration: ``bash ymir.sh start``.It is recommended not to use the ``sudo`` command, otherwise it may cause insufficient privileges.
 
 * When the service starts, it asks the user if they want to send usage reports to the YMIR development team, the default is yes if you do not enter it.
-* If the user needs to use the **label free** labeling platform, you need to change the ip and port information in the .env configuration file to the address and port number of the labeling tool currently deployed by the user.
-
-```
-# Note format: LABEL_TOOL_HOST_IP=http(s)://(ip)
-LABEL_TOOL_HOST_IP=set_your_label_tool_HOST_IP
-LABEL_TOOL_HOST_PORT=set_your_label_tool_HOST_PORT
-
-```
-
+* Choose between label_free and label_studio for labelling platform.
 * The default port number for YMIR's Model Deployment module is 18801. If there is a conflict that needs to be modified, you need to go to the YMIR directory and modify the .env file to configure the ModelDeployment port and MySQL access password:
 
 ```
@@ -300,54 +295,33 @@ Execute the start command after the modification: `bash ymir.sh start`.
 
 **Label Sudio** is also an external labeling system supported by YMIR and can be installed as an alternative labeling tool.
 
-1. In the YMIR directory, modification Env file, configure label studio port：
+1. In the YMIR directory, modify Env file, set LABEL_TOOL to label_studio
 
 ```
 LABEL_TOOL=label_studio
-# Note format: LABEL_TOOL_HOST_IP=http(s)://(ip)
-LABEL_TOOL_HOST_IP=set_your_label_tool_HOST_IP
-LABEL_TOOL_HOST_PORT=set_your_label_tool_HOST_PORT
 ```
 
-2. After configuring the label tool (LABEL_TOOL), IP (LABEL_TOOL_HOST_IP), and port (LABEL_TOOL_HOST_PORT) start the installation of label studio command:
+2. After configuring the label tool (LABEL_TOOL) start the installation of label studio command:
 
-  ```sh
+```sh
 docker-compose -f docker-compose.label_studio.yml up -d
-  ```
+```
 
-It is recommended not to use the ```sudo``` command, as it may result in insufficient privileges.
+It is recommended not to use the `sudo` command, as it may result in insufficient privileges.
 
 3. Check the status of label studio:
 
-  ```sh
+```sh
 docker-compose -f docker-compose.label_studio.yml ps
-  ```
+```
 
-The user can access label studio through the default URL [http://localhost:12007/](http://localhost:12007/). The installation is successful if the login page shows up.
+The user can access label studio through the default URL [http://localhost:8763/](http://localhost:8763/). The installation is successful if the login page shows up.
 
-4. Configure the **Label Studio** authorization token
+4. The command to stop the label studio service is:
 
-  After the user registers and log in to Label Studio, select "Account & Settings" in the upper right corner of the page. Then, copy the token value and paste it into the corresponding location (LABEL_STUDIO_TOKEN) in the .env configuration file of the YMIR project. An example is as follows:
-
-  ```sh
-  label studio env
-
-  LABEL_TOOL_URL=http://(ip):(LABEL_TOOL_PORT)
-
-  LABEL_TOOL_PORT=set_your_label_tool_port
-
-  LABEL_TOOL_TOKEN="Token token_value"
-
-  LABEL_TASK_LOOP_SECONDS=60
-  ```
-
-  Restart ymir after configuring the token (LABEL_STUDIO_TOKEN).
-
-5. The command to stop the label studio service is:
-
-  ```sh
+```sh
 docker-compose -f docker-compose.label_studio.yml down
-  ```
+```
 
 # 3. Use YMIR-GUI: typical model production process
 
@@ -382,8 +356,8 @@ $ mir --vesion
 **Mode II. Installation from the source**
 
 ```
-$ git clone --recursive git@github.com:IndustryEssentials/ymir.git
-$ cd ymir/command
+$ git clone --recursive https://github.com/IndustryEssentials/ymir.git
+$ cd ymir/ymir/command
 $ python setup.py clean --all install
 $ mir --version
 ```
@@ -413,7 +387,7 @@ Also check out [MSFT Encoding Style](https://github.com/Microsoft/Recommenders/w
 [Check this document](https://github.com/IndustryEssentials/ymir/blob/dev/dev_docs/ymir-cmd-container.md) for details.
 
 # 6. Design concept
- 
+
 We use the concept of code version control in Git to manage our data and models, use the concept of branches to create new projects so that different tasks on the same set of images can run in parallel. The additions, retrievals, updates, and deletions of datasets and basic operations are created by commits to branches. Logically, each commit stores an updated version of the dataset or new model, as well as the metadata of the operation that led to this change. Finally, only the data changes are merged into the main branch. This branch conceptually aggregates all the data annotated by many projects on the platform. Please see [Life of a dataset](https://github.com/IndustryEssentials/ymir/wiki/Life-of-a-dataset) for specific design concepts.
 
 # 7. MISC
@@ -428,9 +402,9 @@ Regardless of whether the dataset has a label file, the images folder and annota
 
 The default profile template needs to be extracted in the mirror.
 
-The training image `industryessentials/executor-det-yolov4-training:release-0.1.2` has a configuration file template located at: `/img-man/training-template.yaml`
+The training image `youdaoyzbx/ymir-executor:ymir2.0.0-yolov5-cu111-tmi` has a configuration file template located at: `/img-man/training-template.yaml`
 
-Mining and inference mirrors The configuration file templates for `industryessentials/executor-det-yolov4-mining:release-0.1.2` are located at: `/img-man/mining-template.yaml` (mining) and `/img-man/infer-template. yaml` (infer).
+Mining and inference mirrors The configuration file templates for `youdaoyzbx/ymir-executor:ymir2.0.0-yolov5-cu111-tmi` are located at: `/img-man/mining-template.yaml` (mining) and `/img-man/infer-template. yaml` (infer).
 
 **How can the trained model be used outside the system?**
 
@@ -457,3 +431,4 @@ See [this document](https://github.com/IndustryEssentials/ymir/blob/dev/dev_docs
 <a href="https://github.com/Zhang-SJ930104"><img src="https://avatars.githubusercontent.com/u/91466580?v=4" class="avatar-user" width="18px;"/></a>
 <a href="https://github.com/LuciferZap"><img src="https://avatars.githubusercontent.com/u/92283801?v=4" class="avatar-user" width="18px;"/></a>
 <a href="https://github.com/yzbx"><img src="https://avatars.githubusercontent.com/u/5005182?v=4" class="avatar-user" width="18px;"/></a>
+

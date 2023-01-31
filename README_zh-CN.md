@@ -33,8 +33,8 @@
 
 [📘使用说明](https://github.com/IndustryEssentials/ymir/wiki/%E6%93%8D%E4%BD%9C%E8%AF%B4%E6%98%8E) |
 [🛠️安装教程](README_zh-CN.md#2-%E5%AE%89%E8%A3%85) |
-[🚀进行中的项目](https://github.com/IndustryEssentials/ymir/projects) | 
-[🤔报告问题](https://github.com/IndustryEssentials/ymir/issues/new/choose) | 
+[🚀进行中的项目](https://github.com/IndustryEssentials/ymir/projects) |
+[🤔报告问题](https://github.com/IndustryEssentials/ymir/issues/new/choose) |
 [📰开源协议](https://github.com/IndustryEssentials/ymir/blob/master/LICENSE)
 
 </div>&nbsp;</div>
@@ -79,18 +79,18 @@ Docker
 - 支持 [mmdetection](https://github.com/open-mmlab/mmdetection)
 - 支持 [yolov7](https://github.com/wongkinyiu/yolov7)
 - 支持 [detectron2](https://github.com/facebookresearch/detectron2)
-- 支持 [An Extendable, Efficient and Effective Transformer-based Object Detector](https://github.com/naver-ai/vidt)
+- 支持 [nanodet](https://github.com/RangiLyu/nanodet)
+- 支持 [vidt: An Extendable, Efficient and Effective Transformer-based Object Detector](https://github.com/naver-ai/vidt)
 - 支持 [ymir镜像测试工具库](https://github.com/modelai/ymir-executor-verifier)
 - 支持 [demo 示例镜像制作文档](https://github.com/modelai/ymir-executor-fork/tree/ymir-dev/det-demo-tmi)
 - 支持 [ymir镜像开发扩展库](https://github.com/modelai/ymir-executor-sdk)
 
-查看更多内容 [ymir-executor-fork](https://github.com/modelai/ymir-executor-fork) 。
+查看更多内容 [ymir-executor-fork](https://github.com/modelai/ymir-executor-fork)
 
 在公共镜像内
-- 更新yolov5训练镜像：youdaoyzbx/ymir-executor:ymir1.3.0-yolov5-cu111-tmi
-- 更新mmdetection训练镜像：youdaoyzbx/ymir-executor:ymir1.3.0-mmdet-cu111-tmi
-- 更新支持rv1126芯片部署的yolov5训练镜像：youdaoyzbx/ymir-executor:ymir1.3.0-yolov5-cu111-modelstore
-- 更新支持yolov5-v6.2的训练镜像：youdaoyzbx/ymir-executor:ymir1.3.0-yolov5-v6.2-cu111-tmi
+- 更新yolov5训练镜像：youdaoyzbx/ymir-executor:ymir2.0.0-yolov5-cu111-tmi
+- 更新mmdetection训练镜像：youdaoyzbx/ymir-executor:ymir2.0.0-mmdet-cu111-tmi
+- 更新支持rv1126芯片部署的yolov5训练镜像：youdaoyzbx/ymir-executor:ymir2.0.0-yolov5-cu111-tmid
 
 更多代码更新请查看 [ymir-dev](https://github.com/modelai/ymir-executor-fork/tree/ymir-dev)。
 
@@ -209,7 +209,8 @@ YMIR平台主要满足用户规模化生产模型的需求，为用户提供良�
 
 1. GPU版本需要GPU，并安装nvidia驱动: [https://www.nvidia.cn/geforce/drivers/](https://www.nvidia.cn/geforce/drivers/)
 
-2. 需要安装docker：
+2. 需要安装 docker 及 docker compose：
+*  docker compose >= 1.29.2, docker >= 20.10
 *  Docker & Docker Compose 安装： [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 *  `NVIDIA Docker`安装： [nvidia-docker install-guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 
@@ -255,7 +256,7 @@ YMIR-GUI项目包在DockerHub上，安装部署YMIR步骤如下：
 1. 登录Git地址：[https://github.com/IndustryEssentials/ymir](https://github.com/IndustryEssentials/ymir)
 
 将部署项目YMIR下拉到本地服务器，克隆仓库地址命令：
-`git clone git@github.com:IndustryEssentials/ymir.git`
+`git clone https://github.com/IndustryEssentials/ymir.git`
 
 2. 如无可用显卡，用户需要安装CPU模式，请修改为CPU启动模式，修改.env文件将SERVER_RUNTIME参数修改为runc：
 
@@ -266,15 +267,7 @@ YMIR-GUI项目包在DockerHub上，安装部署YMIR步骤如下：
 3. 执行启动命令：`bash ymir.sh start`，建议不要使用```sudo```命令，否则可能会造成权限不足。
 
 *  服务启动时会询问用户是否愿意发送使用报告到YMIR开发团队，不输入默认为愿意。
-*  当询问用户是否需要启动label free标注平台时，如果用户需要启动，则需要前往.env配置文件中将ip和port信息改为用户当前所部署的标注工具地址及端口号。
-
-```
-# Note format: LABEL_TOOL_HOST_IP=http(s)://(ip)
-LABEL_TOOL_HOST_IP=set_your_label_tool_HOST_IP
-LABEL_TOOL_HOST_PORT=set_your_label_tool_HOST_PORT
-
-```
-
+*  当询问用户是否需要启动标注平台时，用户可以选择 label_free 或 label_studio
 *  YMIR的模型部署模块默认端口号为18801，如有冲突需要修改，则需要前往YMIR目录下修改.env文件，配置 ModelDeployment 端口和 MySQL 访问密码：
 
 ```
@@ -296,39 +289,31 @@ DEPLOY_MODULE_MYSQL_ROOT_PASSWORD=deploy_db_passwd
 
 label studio同时也是YMIR所支持的外接标注系统，可以作为备选标注工具安装。
 
-1. 在上一节的YMIR目录下，修改.env文件，配置label studio端口：
+1. 在上一节的YMIR目录下，修改.env文件，配置 LABEL_TOOL
 
 ```
 LABEL_TOOL=label_studio
-# Note format: LABEL_TOOL_HOST_IP=http(s)://(ip)
-LABEL_TOOL_HOST_IP=set_your_label_tool_HOST_IP
-LABEL_TOOL_HOST_PORT=set_your_label_tool_HOST_PORT
-
 ```
 
-2. 配置好标注工具（LABEL_TOOL）、IP（LABEL_TOOL_HOST_IP）、端口（LABEL_TOOL_HOST_PORT）后启动安装label studio命令如下：
+2. 配置好标注工具（LABEL_TOOL）后启动安装 label studio 命令如下：
 
-`docker-compose -f docker-compose.label_studio.yml up -d`
+```sh
+docker-compose -f docker-compose.label_studio.yml up -d
+```
 
 3. 完成后查看label studio状态命令如下：
 
-`docker-compose -f docker-compose.label_studio.yml ps`（默认端口为12007）
-
-可以登录默认地址 [http://localhost:12007/](http://localhost:12007/) 显示登录界面即安装成功。
-
-4. 配置label studio授权token
-
-注册登录label studio后，在页面右上角个人信息图标，选择"Account & Settings"获取Token值并复制，粘贴到YMIR项目的.env配置文件对应的位置（LABEL_STUDIO_TOKEN）。实例如下：
-
-```
-LABEL_TOOL_TOKEN="Token token_value"
+```sh
+docker-compose -f docker-compose.label_studio.yml ps`
 ```
 
-配置好Token值（LABEL_STUDIO_TOKEN）后重启YMIR即可。
+可以登录默认地址 [http://localhost:8763/](http://localhost:8763/) 显示登录界面即安装成功。
 
-5. 停止label studio服务命令如下：
+4. 停止label studio服务命令如下：
 
-`docker-compose -f docker-compose.label_studio.yml down`
+```sh
+docker-compose -f docker-compose.label_studio.yml down
+```
 
 # 3. GUI使用-典型模型生产流程
 
@@ -339,13 +324,13 @@ LABEL_TOOL_TOKEN="Token token_value"
 因此，YMIR平台通过主动学习的方法，首先通过本地导入或者少量数据来训练出一个初始模型，使用该初始模型，从海量数据中挖掘出对模型能力提高最有利的数据。挖掘完成后，仅针对这部分数据进行标注，对原本的训练数据集进行高效扩充。
 
 使用更新后的数据集再次训练模型，以此来提高模型能力。相比于对全部数据标注后再训练，YMIR平台提供的方法更高效，减少了对低质量数据的标注成本。通过挖掘，标注，训练的循环，扩充高质量数据，提升模型能力。
-  
+
 本次使用一次模型迭代的完整流程来说明YMIR平台的操作过程。具体的操作流程请查看[操作说明](https://github.com/IndustryEssentials/ymir/wiki/%E6%93%8D%E4%BD%9C%E8%AF%B4%E6%98%8E)。
 
 # 4. 进阶版：Ymir-CMD line使用指南
 
 本章节为YMIR-CMD line的使用说明，如需安装和使用GUI，请参考[GUI安装说明](#2-安装)。
-  
+
 ## 4.1 安装
 
 ### 方式一：通过pip安装
@@ -358,8 +343,8 @@ $ mir --vesion
 
 ### 方式二：通过源码安装
 ```
-$ git clone --recursive git@github.com:IndustryEssentials/ymir.git
-$ cd ymir/command
+$ git clone --recursive https://github.com/IndustryEssentials/ymir.git
+$ cd ymir/ymir/command
 $ python setup.py clean --all install
 $ mir --version
 ```
@@ -390,7 +375,7 @@ YMIR repo中的任何代码都应遵循编码标准，并将在CI测试中进行
 [查看这篇文档](https://github.com/IndustryEssentials/ymir/blob/dev/dev_docs/ymir-cmd-container.md)获取更多细节。
 
 # 6. 设计理念
-  
+
 我们使用Git中代码版本控制的概念来管理我们的数据和模型。我们使用分支的概念创建新项目，以便同一组映像上的不同任务可以并行运行。数据集的增加、检索、更新和删除以及基本操作都创建提交到分支。从逻辑上讲，每次提交都存储数据集或新模型的更新版本，以及导致此更改的操作的元数据。最后，只有数据更改被合并到主分支，这在概念上，聚合了该平台上许多项目注释的所有数据。具体设计理念请查看
 [Life of a dataset](https://github.com/IndustryEssentials/ymir/wiki/%E6%95%B0%E6%8D%AE%E9%9B%86%E6%B5%81%E8%BD%AC%E8%BF%87%E7%A8%8B)。
 
@@ -435,3 +420,4 @@ YMIR repo中的任何代码都应遵循编码标准，并将在CI测试中进行
 <a href="https://github.com/Zhang-SJ930104"><img src="https://avatars.githubusercontent.com/u/91466580?v=4" class="avatar-user" width="18px;"/></a>
 <a href="https://github.com/LuciferZap"><img src="https://avatars.githubusercontent.com/u/92283801?v=4" class="avatar-user" width="18px;"/></a>
 <a href="https://github.com/yzbx"><img src="https://avatars.githubusercontent.com/u/5005182?v=4" class="avatar-user" width="18px;"/></a>
+

@@ -18,6 +18,10 @@ class ModelStageStorage(BaseModel):
     stage_name: str
     files: List[str]
     mAP: float = Field(..., ge=0, le=1)
+    mAR: float = Field(default=0, ge=0, le=1)
+    tp: int = Field(default=0, ge=0)
+    fp: int = Field(default=0, ge=0)
+    fn: int = Field(default=0, ge=0)
     timestamp: int
 
 
@@ -29,6 +33,7 @@ class ModelStorage(BaseModel):
     model_hash: str = ''
     stage_name: str = ''
     attachments: Dict[str, List[str]] = {}
+    evaluate_config: Dict[str, float] = {}
     package_version: str = Field(..., min_length=1)
 
     @property
@@ -39,12 +44,29 @@ class ModelStorage(BaseModel):
         model_meta = mirpb.ModelMeta()
         json_format.ParseDict(
             {
-                'mean_average_precision': self.stages[self.best_stage_name].mAP,
+                'mAP': self.stages[self.best_stage_name].mAP,
                 'model_hash': self.model_hash,
-                'stages': {k: v.dict()
-                           for k, v in self.stages.items()},
+                'stages': {
+                    k: {
+                        'stage_name': v.stage_name,
+                        'files': v.files,
+                        'timestamp': v.timestamp,
+                        'ci_averaged_evaluation': {
+                            'ap': v.mAP,
+                            'ar': v.mAR,
+                            'tp': v.tp,
+                            'fp': v.fp,
+                            'fn': v.fn,
+                        }
+                    }
+                    for k, v in self.stages.items()
+                },
                 'best_stage_name': self.best_stage_name,
                 'class_names': self.class_names,
+                'evaluate_config': {
+                    'iou_thrs_interval': f"{self.evaluate_config.get('iou_thr', '')}",
+                    'conf_thr': self.evaluate_config.get('conf_thr', 0),
+                },
             }, model_meta)
         return model_meta
 
