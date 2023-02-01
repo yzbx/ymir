@@ -10,7 +10,7 @@ from mir.commands.import_model import CmdModelImport
 from mir.protos import mir_command_pb2 as mirpb
 from mir.tools import mir_storage_ops, models, settings as mir_settings
 from mir.tools.code import MirCode
-from mir.version import YMIR_VERSION
+from mir.version import YMIR_MODEL_VERSION
 from tests import utils as test_utils
 
 
@@ -66,8 +66,8 @@ class TestCmdImportModel(unittest.TestCase):
                                             },
                                             stages={mss.stage_name: mss},
                                             best_stage_name=mss.stage_name,
-                                            object_type=mirpb.ObjectType.OT_DET_BOX,
-                                            package_version=YMIR_VERSION)
+                                            object_type=mirpb.ObjectType.OT_UNKNOWN,  # will be treated as detection
+                                            package_version=YMIR_MODEL_VERSION)
         with open(os.path.join(self._src_model_root, 'ymir-info.yaml'), 'w') as f:
             yaml.safe_dump(model_storage.dict(), f)
         with tarfile.open(self._src_model_package_path, 'w:gz') as tar_gz_f:
@@ -84,6 +84,7 @@ class TestCmdImportModel(unittest.TestCase):
             mir_root=self._mir_root, mir_branch='a', ms=mirpb.MirStorage.MIR_TASKS, mir_task_id='a')
         task = mir_storage_data.tasks[mir_storage_data.head_task_id]
         self.assertTrue(os.path.isfile(os.path.join(self._models_location, task.model.model_hash)))
+        self.assertEqual(task.model.object_type, mirpb.ObjectType.OT_DET_BOX)
 
     # public: test cases
     def test_00(self):

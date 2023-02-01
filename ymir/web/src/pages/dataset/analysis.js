@@ -45,13 +45,11 @@ function Analysis() {
 
   useEffect(() => {
     const charts = generateCharts(assetChartConfig, source)
-    console.log('assetChartConfig, source getSource:', assetChartConfig, source, charts)
     setAssetCharts(charts)
   }, [assetChartConfig, source])
 
   useEffect(() => {
     const charts = generateCharts(annotationChartConfig, source)
-    console.log('annotationChartConfig, source getSource:', annotationChartConfig, source, charts)
     setAnnotationCharts(charts)
   }, [annotationChartConfig, source])
 
@@ -61,7 +59,6 @@ function Analysis() {
 
   function generateCharts(configs = [], datasets = []) {
     return datasets.length ? configs.map((config) => {
-      console.log('getSource config, datasets:', config, datasets, configs)
       const xData = config.xType === 'attribute' ? getAttrXData(config, datasets) : getXData(config, datasets)
       const yData = config.xType === 'attribute' ? getAttrYData(config, datasets, xData) : getYData(config, datasets)
       return {
@@ -79,7 +76,6 @@ function Analysis() {
 
   function getXData(config, datasets) {
     const { sourceField, isXUpperLimit = false, getSource, renderEachX = (x) => x } = config
-    console.log('getSource:', getSource, config)
     const dataset =
       datasets.find((item) => {
         const target = getSource(item)
@@ -102,12 +98,12 @@ function Analysis() {
       datasets &&
       datasets.map((dataset) => {
         const data = getSource(dataset)
-        const total = data[totalField]
+        const total = data[totalField] || dataset[totalField]
         const name = getVersionName(dataset)
         const field = data[sourceField]
         return {
           name,
-          value: field.map((item) => (total ? (item.y / total).toFixed(4) : 0)),
+          value: field.map((item) => (total ? item.y / total : 0)),
           count: field.map((item) => item.y),
         }
       })
@@ -130,12 +126,12 @@ function Analysis() {
       datasets &&
       datasets.map((dataset) => {
         const data = getSource(dataset)
-        const total = data[totalField]
+        const total = data[totalField] || dataset[totalField]
         const name = getVersionName(dataset)
         const attrObj = data[sourceField]
         return {
           name,
-          value: xData.map((key) => (total ? (attrObj[key] ? (attrObj[key] / total).toFixed(4) : 0) : 0)),
+          value: xData.map((key) => (total ? (attrObj[key] ? attrObj[key] / total : 0) : 0)),
           count: xData.map((key) => attrObj[key] || 0),
         }
       })
@@ -207,12 +203,11 @@ function Analysis() {
               columns={tableColumns}
               pagination={false}
             />
-            {chartsRender('dataset.analysis.annotations.metrics', assetCharts)}
-            {chartsRender('dataset.analysis.assets.metrics', annotationCharts)}
+            {chartsRender('dataset.analysis.annotations.metrics', annotationCharts)}
+            {chartsRender('dataset.analysis.assets.metrics', assetCharts)}
           </Col>
           <Col span={6} className="rightForm">
             <div className={style.formContainer}>
-              {console.log('source:', source)}
               <div className="mask" hidden={!source.length}>
                 <Button style={{ marginBottom: 24 }} size="large" type="primary" onClick={() => retry()}>
                   <CompareIcon /> {t('dataset.analysis.btn.retry')}

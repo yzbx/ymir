@@ -10,9 +10,11 @@ from mir.commands import base
 from mir.protos import mir_command_pb2 as mirpb
 from mir.tools import checker, mir_storage_ops, models, revs_parser
 from mir.tools import settings as mir_settings
+from mir.tools.annotations import make_empty_mir_annotations
 from mir.tools.code import MirCode
 from mir.tools.command_run_in_out import command_run_in_out
 from mir.tools.errors import MirRuntimeError
+from mir.tools.model_updater import update_model_info
 
 
 class CmdModelImport(base.BaseCommand):
@@ -52,9 +54,11 @@ class CmdModelImport(base.BaseCommand):
         with tarfile.open(package_path, 'r') as tf:
             tf.extractall(extract_model_dir_path)
 
-        with open(os.path.join(extract_model_dir_path, 'ymir-info.yaml'), 'r') as f:
-            ymir_info_dict = yaml.safe_load(f.read())
+        model_info_path = os.path.join(extract_model_dir_path, 'ymir-info.yaml')
+        update_model_info(model_info_path)
 
+        with open(model_info_path, 'r') as f:
+            ymir_info_dict = yaml.safe_load(f.read())
         model_storage = models.ModelStorage.parse_obj(ymir_info_dict)
 
         logging.info(f"importing model with storage: {model_storage}")
@@ -88,7 +92,8 @@ class CmdModelImport(base.BaseCommand):
                                                       his_branch=src_typ_rev_tid.rev,
                                                       mir_datas={
                                                           mirpb.MirStorage.MIR_METADATAS: mirpb.MirMetadatas(),
-                                                          mirpb.MirStorage.MIR_ANNOTATIONS: mirpb.MirAnnotations()
+                                                          mirpb.MirStorage.MIR_ANNOTATIONS:
+                                                          make_empty_mir_annotations()
                                                       },
                                                       task=task)
 

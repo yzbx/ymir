@@ -285,7 +285,8 @@ message ModelMeta {
     string best_stage_name = 5;
     repeated string class_names = 6;
     EvaluateConfig evaluate_config = 7;
-    ObjectType object_type = 8;
+    /// detection: 2, semantic segmentation: 3, instance segmentation: 4
+    int32 object_type = 8;
     /// available in semantic segmentation models
     float mIoU = 9;
     /// available in instance segmentation models
@@ -400,7 +401,7 @@ message SingleMapCount {
 };
 
 message AnnoStats {
-    int32 total_cnt = 1;
+    int32 total_obj_cnt = 1;
     int32 positive_asset_cnt = 2;
     int32 negative_asset_cnt = 3;
 
@@ -412,9 +413,12 @@ message AnnoStats {
     // Shortcut of class_ids for evaluation (dup. field as in SingleTaskAnnotations).
     repeated int32 eval_class_ids = 9;
 
-    int32 total_mask_area = 10;
+    int64 total_mask_area = 10;
     // key: class ids, value: mask area for this class id
-    map<int32, int32> class_ids_mask_area = 11;
+    map<int32, int64> class_ids_mask_area = 11;
+
+    // key: class ids, value: obj count for this class id
+    map<int32, int32> class_ids_obj_cnt = 12;
 
     reserved 4, 5, 6;
 };

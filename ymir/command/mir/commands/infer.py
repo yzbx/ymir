@@ -4,7 +4,7 @@ import logging
 import os
 import shutil
 import time
-from typing import Any, Callable, Dict
+from typing import Any
 
 from google.protobuf import json_format
 import yaml
@@ -162,8 +162,11 @@ class CmdInfer(base.BaseCommand):
             # result files -> task_annotations and save
             class_id_mgr = class_ids.load_or_create_userlabels(label_storage_file=label_storage_file)
             task_annotations = mirpb.SingleTaskAnnotations()
-            _process_infer_result(model_storage.object_type)(task_annotations, work_dir_out, class_id_mgr)
-            task_annotations.type = model_storage.object_type  # type: ignore
+            task_annotations.type = (mirpb.ObjectType.OT_DET_BOX if model_storage.object_type
+                                     == mirpb.ObjectType.OT_DET_BOX else mirpb.ObjectType.OT_SEG)
+            process_result_func = (_process_infer_detbox_result if model_storage.object_type
+                                   == mirpb.ObjectType.OT_DET_BOX else _process_infer_seg_coco_result)
+            process_result_func(task_annotations, work_dir_out, class_id_mgr)
 
             with open(os.path.join(work_dir_out, 'prediction.mir'), 'wb') as m_f:
                 m_f.write(task_annotations.SerializeToString())
@@ -221,15 +224,6 @@ def _prepare_assets(index_file: str, work_index_file: str, media_path: str) -> N
                               needs_new_commit=False)
 
 
-def _process_infer_result(
-        model_object_type: Any) -> Callable[[mirpb.SingleTaskAnnotations, str, class_ids.UserLabels], None]:
-    _func_map: Dict[Any, Callable[[mirpb.SingleTaskAnnotations, str, class_ids.UserLabels], None]] = {
-        mirpb.ObjectType.OT_DET_BOX: _process_infer_detbox_result,
-        mirpb.ObjectType.OT_SEG: _process_infer_seg_coco_result,
-    }
-    return _func_map[model_object_type]
-
-
 def _process_infer_detbox_result(task_annotations: mirpb.SingleTaskAnnotations, work_dir_out: str,
                                  class_id_mgr: class_ids.UserLabels) -> None:
     infer_result_file = os.path.join(work_dir_out, 'infer-result.json')
@@ -244,7 +238,7 @@ def _process_infer_detbox_result(task_annotations: mirpb.SingleTaskAnnotations, 
     unknown_class_id_annos_cnt = 0
     no_score_annos_cnt = 0
     for asset_name, annotations_dict in detections.items():
-        annotations = annotations_dict.get('boxes')
+        annotations = annotations_dict.get('boxes') or annotations_dict.get('annotations')
         if not isinstance(annotations, list):
             logging.error(f"invalid annotations: {annotations}")
             continue
@@ -252,7 +246,8 @@ def _process_infer_detbox_result(task_annotations: mirpb.SingleTaskAnnotations, 
         single_image_annotations = mirpb.SingleImageAnnotations()
         idx = 0
         for annotation_dict in annotations:
-            class_id = class_id_mgr.id_and_main_name_for_name(name=annotation_dict['class_name'])[0]
+            class_name = annotation_dict['class_name']
+            class_id = class_id_mgr.id_and_main_name_for_name(name=class_name)[0]
             # ignore unknown class ids
             if class_id < 0:
                 unknown_class_id_annos_cnt += 1
@@ -265,6 +260,7 @@ def _process_infer_detbox_result(task_annotations: mirpb.SingleTaskAnnotations, 
             annotation.index = idx
             json_format.ParseDict(annotation_dict['box'], annotation.box)
             annotation.class_id = class_id
+            annotation.class_name = class_name
             annotation.score = float(annotation_dict['score'])
             single_image_annotations.boxes.append(annotation)
             idx += 1

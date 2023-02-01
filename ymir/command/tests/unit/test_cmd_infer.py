@@ -13,7 +13,7 @@ from mir.protos import mir_command_pb2 as mirpb
 from mir.tools import models, settings as mir_settings
 from mir.tools.class_ids import ids_file_path
 from mir.tools.code import MirCode
-from mir.version import YMIR_VERSION
+from mir.version import YMIR_MODEL_VERSION
 from tests import utils as test_utils
 
 
@@ -95,7 +95,7 @@ class TestCmdInfer(unittest.TestCase):
                                             stages={model_stage.stage_name: model_stage},
                                             best_stage_name=model_stage.stage_name,
                                             object_type=mirpb.ObjectType.OT_DET_BOX,
-                                            package_version=YMIR_VERSION)
+                                            package_version=YMIR_MODEL_VERSION)
 
         with open(os.path.join(self._models_location, 'ymir-info.yaml'), 'w') as f:
             yaml.dump(model_storage.dict(), f)
@@ -186,3 +186,10 @@ class TestCmdInfer(unittest.TestCase):
             infer_config = yaml.safe_load(f.read())
             self.assertTrue('class_names' in infer_config)
             self.assertTrue('model_params_path' in infer_config)
+
+        # checkout prediction.mir
+        with open(os.path.join(fake_args.work_dir, 'out', 'prediction.mir'), 'rb') as f:
+            prediction = mirpb.SingleTaskAnnotations()
+            prediction.ParseFromString(f.read())
+            self.assertEqual(len(prediction.image_annotations), 1)
+            self.assertEqual(len(prediction.image_annotations['2007_000032.jpg'].boxes), 1)

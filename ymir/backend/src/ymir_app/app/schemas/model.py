@@ -3,7 +3,7 @@ import json
 
 from pydantic import BaseModel, Field, root_validator, validator
 from app.config import settings
-from app.constants.state import ResultState, TaskType
+from app.constants.state import ResultState, TaskType, ObjectType
 from app.schemas.common import (
     Common,
     DateTimeModelMixin,
@@ -24,6 +24,7 @@ class ModelBase(BaseModel):
     description: Optional[str]
     map: Optional[float] = Field(description="Mean Average Precision")
     miou: Optional[float] = Field(description="Mean IoU")
+    mask_ap: Optional[float] = Field(description="Mask Average Precision")
     keywords: Optional[str]
     result_state: ResultState = ResultState.processing
     model_group_id: int
@@ -71,6 +72,7 @@ class ModelInDBBase(IdModelMixin, DateTimeModelMixin, IsDeletedModelMixin, Model
     is_visible: bool
     related_stages: List[ModelStageInDBBase]
     recommended_stage: Optional[int] = None
+    object_type: Optional[ObjectType] = ObjectType.object_detect
 
     class Config:
         orm_mode = True

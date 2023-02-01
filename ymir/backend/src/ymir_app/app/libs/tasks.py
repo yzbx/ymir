@@ -10,6 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from app.api.errors.errors import (
+    ProjectNotFound,
     DatasetIndexNotReady,
     DuplicateDatasetGroupError,
     FailedToUpdateTaskStatusTemporally,
@@ -24,6 +25,7 @@ from app.api.errors.errors import (
 from app.constants.state import (
     FinalStates,
     TaskState,
+    TaskType,
     ResultType,
     ResultState,
 )
@@ -158,6 +160,13 @@ class TaskResult:
     @cached_property
     def user_labels(self) -> Dict:
         return self.controller.get_labels_of_user(self.user_id)
+
+    @cached_property
+    def object_type(self) -> int:
+        project = crud.project.get(self.db, self.project_id)
+        if not project:
+            raise ProjectNotFound()
+        return project.object_type
 
     @cached_property
     def model_info(self) -> Optional[Dict]:
@@ -305,19 +314,22 @@ class TaskResult:
 
     def update_model_result(self, task_result: schemas.TaskUpdateStatus, task_in_db: models.Task) -> None:
         """
-        Criterion for ready model: viewer returns valid model_info
+        Criterion for ready model: viewer returns valid model_info and object_type matched with project's
         """
         model_record = crud.model.get_by_task_id(self.db, task_id=self.task.id)
         if not model_record:
             logger.error("[update task] task result (model) not found, skip")
             return
         model_info = self.model_info
-        if model_info:
+        if model_info and model_info.get("object_type") == self.object_type:
             # as long as model info is ready, regardless of task status, just set model as ready
+            parameters = model_info["task_parameters"]
+            if task_in_db.type == TaskType.import_model:
+                parameters = filter_task_parameters_from_imported_model(parameters)
             crud.task.update_parameters_and_config(
                 self.db,
                 task=task_in_db,
-                parameters=model_info["task_parameters"],
+                parameters=parameters,
                 config=json.dumps(model_info["executor_config"]),
             )
             crud.model.finish(self.db, model_record.id, result_state=ResultState.ready, result=model_info)
@@ -346,3 +358,13 @@ class TaskResult:
                 dataset_record.id,
                 result_state=ResultState.error,
             )
+
+
+def filter_task_parameters_from_imported_model(serialized_task_parameters: str) -> str:
+    """
+    for imported model, only a few docker_image related parameters are relevant
+    """
+    KEPT_PARAMETER_KEYS = ["docker_image", "docker_image_config", "preprocess"]
+    task_parameters = json.loads(serialized_task_parameters)
+    task_parameters = {k: v for k, v in task_parameters.items() if k in KEPT_PARAMETER_KEYS}
+    return json.dumps(task_parameters)
